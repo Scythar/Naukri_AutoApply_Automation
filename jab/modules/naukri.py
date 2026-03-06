@@ -1,4 +1,4 @@
-import time
+﻿import time
 import re
 import numpy as np
 import nltk 
@@ -103,6 +103,56 @@ class ChatbotAgent:
         best_match = min(sentiment_diffs, key=lambda x: x[1])
         return best_match[0], best_match[1]
 
+    def _extract_first_number(self, text):
+        if text is None:
+            return None
+        m = re.search(r"\d+(?:\.\d+)?", str(text))
+        return float(m.group()) if m else None
+
+    def _match_option_by_answer(self, answer, options):
+        answer_text = str(answer or "").strip().lower()
+        answer_num = self._extract_first_number(answer_text)
+        if not options:
+            return None
+
+        if answer_num is not None:
+            exact_candidates = []
+            for option in options:
+                label = option["label"].lower()
+                label_numbers = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", label)]
+                if label_numbers and answer_num in label_numbers:
+                    exact_candidates.append(option)
+            if exact_candidates:
+                exact_candidates.sort(key=lambda x: len(x["label"]))
+                return exact_candidates[0]["id"]
+
+            for option in options:
+                label = option["label"].lower()
+                range_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)", label)
+                if range_match:
+                    start = float(range_match.group(1))
+                    end = float(range_match.group(2))
+                    if start <= answer_num <= end:
+                        return option["id"]
+
+            plus_matches = []
+            for option in options:
+                label = option["label"].lower()
+                plus_match = re.search(r"(\d+(?:\.\d+)?)\s*\+", label)
+                if plus_match:
+                    threshold = float(plus_match.group(1))
+                    if answer_num >= threshold:
+                        plus_matches.append((threshold, option["id"]))
+            if plus_matches:
+                plus_matches.sort(key=lambda x: x[0], reverse=True)
+                return plus_matches[0][1]
+
+        for option in options:
+            label = option["label"].lower()
+            if answer_text and answer_text in label:
+                return option["id"]
+        return None
+
     def classify_new_question(self):
         page=self.page
         cbcn = page.wait_for_selector(".chatbot_MessageContainer",timeout = 3000)
@@ -130,12 +180,31 @@ class ChatbotAgent:
                 elif radio_buttons or checkboxes:
                     _buttons = radio_buttons or checkboxes
                     print("The new question requires a radio button selection.")
-                    options = [el.evaluate('el => el.id') for el in _buttons]
-                    print("Options:", options)
-                    finnas = self.match_by_sentiment(answer,options)[0]
+                    options = []
+                    for el in _buttons:
+                        option_id = el.evaluate("el => el.id")
+                        label_text = ""
+                        if option_id:
+                            label_locator = page.locator(f'label[for="{option_id}"]')
+                            if label_locator.count() > 0:
+                                label_text = label_locator.first.inner_text().strip()
+                        if not label_text:
+                            label_text = el.evaluate("el => el.value || el.getAttribute('aria-label') || el.id || ''").strip()
+                        options.append({"id": option_id, "label": label_text, "el": el})
+                    print("Options:", [opt["label"] for opt in options])
+                    finnas = self._match_option_by_answer(answer, options)
+                    if not finnas:
+                        labels = [opt["label"] for opt in options]
+                        best_label = self.match_by_sentiment(answer, labels)[0]
+                        finnas = next((opt["id"] for opt in options if opt["label"] == best_label), None)
+                    if not finnas:
+                        finnas = options[0]["id"]
                     print('FINALANSWER',finnas)
-                    label_ = page.locator(f'label[for="{finnas}"]')
-                    label_.click(force=True)
+                    selected_option = next((opt for opt in options if opt["id"] == finnas), None)
+                    if selected_option and selected_option["id"]:
+                        page.locator(f'label[for="{selected_option["id"]}"]').click(force=True)
+                    else:
+                        (selected_option or options[0])["el"].click(force=True)
                 elif text_input.is_visible():
                     print("The new question requires text input.")
                     text_input.type(answer,delay=100)
@@ -231,43 +300,52 @@ class NaukriBot:
         self.page.wait_for_load_state('networkidle')
         job_links = self.page.eval_on_selector_all(
             '.title',
-            'elements => elements.map(element => element.getAttribute("href")) .filter(href => href !==null)'
+            'elements => elements.map(element => element.getAttribute("href")) .filter(href => href !== null)'
         )
+        if not job_links:
+            print(f"No job links found on page {self.page_no}.")
+            return
+
         for jl in job_links:
             if self.applied_count >= self.applno:
-                print(f"✅ Applied to {self.applied_count} jobs.")
+                print(f"Applied to {self.applied_count} jobs.")
                 break
             try:
                 self.page.wait_for_timeout(2000)
                 self.page.goto(jl)
                 self.page.wait_for_load_state('networkidle')
                 apply = self.page.query_selector('#apply-button')
+                if not apply:
+                    print(f"Skipping job without apply button: {jl}")
+                    continue
+
                 apply.click()
                 try:
                     expect(self.page.locator(".chatbot_MessageContainer")).to_be_visible(timeout=3000)
                     self.cba.classify_new_question()
-                    self.applied_count+=1
+                    self.applied_count += 1
                 except:
                     try:
                         expect(self.page).to_have_url(self.pattern)
-                        self.applied_count+=1
+                        self.applied_count += 1
                     except:
-                        print(f"✅ Applied to {self.applied_count} jobs.")
-                        return
+                        print(f"Skipping job (not applied): {jl}")
+                        continue
             except Exception as e:
-                print(jl,"_______", e)
-                continue 
-        if self.applied_count<self.applno:
-            self.page_no+=1
+                print(jl, "_______", e)
+                continue
+
+        if self.applied_count < self.applno:
+            self.page_no += 1
             parsed = urlparse(self.base_page_url)
             new_path = parsed.path + f"-{self.page_no}"
             modified_url = urlunparse(parsed._replace(path=new_path))
             try:
                 self.page.goto(modified_url)
             except:
-                print(f"✅ Applied to {self.applied_count} jobs.")
+                print(f"Could not open results page {self.page_no}. Stopping at {self.applied_count} applications.")
                 return
-            print(f'goin to page {self.page_no}')
+            print(f'going to page {self.page_no}')
             self.apply_()
 
     def filter_apply(self,s,e='',l='',ja='3'):
@@ -350,3 +428,4 @@ class NaukriBot:
         
     def close(self):
         self.browser.close()
+

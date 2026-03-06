@@ -63,6 +63,8 @@ Make sure you are in the root directory of the project and the virtual environme
 To train the model run:
 ```bash
 python -m jab --email your-email@gmail.com --train
+
+.\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --train
 ```
 Replace your-email@gmail.com with your actual email, this email is used to identify your trained model and data when sending out job applications. The model will be trained and saved in the jab/data/your-email@gmail.com models directory.
 
@@ -72,7 +74,13 @@ python -m jab --email your-email@gmail.com --apply
 ```
 If you would like to apply filters to search for the jobs run:
 ```bash
-python -m jab --email your-email@gmail.com --apply --filters
+python -m jab --email niteshsingh5375@gmail.com --apply --filters
+
+.\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --apply
+.\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --apply --filters
+
+.\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --apply --filters --password "nitesh5375" --jobs 100 --search "java developer" --experience 3 --location "" --job-age 3
+
 ```
 follow along the prompts to put in your password and select the filters you would like to apply.
 
