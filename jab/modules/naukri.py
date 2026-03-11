@@ -153,6 +153,19 @@ class ChatbotAgent:
                 return option["id"]
         return None
 
+    def _is_previous_employee_question(self, question):
+        normalized = " ".join(str(question or "").lower().split())
+        return (
+            "previous employee" in normalized
+            and "intern" in normalized
+            and "contractor" in normalized
+        )
+
+    def _override_answer(self, question, answer):
+        if self._is_previous_employee_question(question):
+            return "No"
+        return answer
+
     def classify_new_question(self):
         page=self.page
         cbcn = page.wait_for_selector(".chatbot_MessageContainer",timeout = 3000)
@@ -165,6 +178,7 @@ class ChatbotAgent:
                 print("New question appeared:", question_element.inner_text())
                 question = question_element.inner_text()
                 answer = self.model.chatbot_response(question)
+                answer = self._override_answer(question, answer)
                 print('answer',answer)
 
                 checkboxes = cbcn.query_selector_all('input[type="checkbox"]')

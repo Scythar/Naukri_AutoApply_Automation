@@ -87,9 +87,14 @@ def training(data):
             "answer": data['Total experience']
         },
         {
-            "patterns": [f"Have you worked at our organization?", f"Were you previously employed by organization?", f"Did you work for organization?"],
+            "patterns": [
+                f"Have you worked at our organization?",
+                f"Were you previously employed by organization?",
+                f"Did you work for organization?",
+                "Are you a Previous Employee, Intern, Or Contractor?",
+            ],
             "tag": "bool_employee",
-            "answer": 'No'
+            "answer": data.get("Are you a Previous Employee, Intern, Or Contractor?", "No")
         },
         {
             "patterns": ["How should we address you?", "What is your salutation?", "What is your title?", "How do you prefer to be addressed?"],

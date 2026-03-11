@@ -15,6 +15,17 @@
     "Current company": "oracle",
     "Mobile": "8860053770",
     "Email": "niteshsingh5375@gmail.com",
+
+    "Address": {
+        "Country": "India",
+        "Address Line 1": "Flat 204 Sri Lakshmi Residency Kadubeesanahalli",
+        "Address Line 2": "Near Eco Space Business Park Outer Ring Road",
+        "Address Line 3": "",
+        "City or Town": "Bengaluru",
+        "State": "Karnataka",
+        "Pin Code": "560103"
+    },
+
     "Notice period": "0",
     "Skills": {
         "Java": "3.4",
@@ -54,9 +65,14 @@
         "BugDB": "3.4",
         "SQL": "3.4",
         "Oracle SQL": "3.4",
-        "Knockout.js": "3.4"
+        "Knockout.js": "3.4",
+        "python": "1"
     },
+
     "Date of birth": "11/09/1995",
     "Gender": "Male",
-    "Preferred work location": "Bengaluru"
+    "Preferred work location": "Bengaluru",
+    "Are you on a career break?": "No",
+    "Are you a Previous Employee, Intern, Or Contractor?": "No",
+    "Resume path": "C:\\Users\\nites\\Downloads\\resume\\Nitesh_Singh_JAVA_Full_Stack_Dev_3Yr.pdf"
 }
