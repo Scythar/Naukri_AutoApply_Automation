@@ -67,7 +67,7 @@ class ChatbotModel():
             if intent['tag'] == tag:
                 result = intent['answer']
                 break
-        res = lambda y: y if y not in " " else "A"
+        res = lambda y: y if y not in " " else "3"
         return res(result)
 
     def chatbot_response(self, msg):
@@ -75,7 +75,7 @@ class ChatbotModel():
             ints = self.predict_class(msg)
             res = self.get_response(ints)
         except:
-            res = 'A'
+            res = '3'
         return res
 
 class ChatbotAgent:
@@ -162,6 +162,9 @@ class ChatbotAgent:
         )
 
     def _override_answer(self, question, answer):
+        normalized = " ".join(str(question or "").lower().split())
+        if normalized.startswith("how many years of experience"):
+            return "3"
         if self._is_previous_employee_question(question):
             return "No"
         return answer
