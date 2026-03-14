@@ -6,6 +6,21 @@ import tensorflow as tf
 import nltk
 from nltk.stem import WordNetLemmatizer
 
+NLTK_RESOURCES = {
+    "tokenizers/punkt": "punkt",
+    "tokenizers/punkt_tab": "punkt_tab",
+    "corpora/wordnet": "wordnet",
+    "corpora/omw-1.4": "omw-1.4",
+}
+
+
+def ensure_nltk_data():
+    for resource_path, package_name in NLTK_RESOURCES.items():
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            nltk.download(package_name, quiet=True)
+
 
 with open("./jab/data/user_data.json","r") as file:
     user_data = json.load(file)
@@ -130,6 +145,7 @@ def training(data):
 class ChatbotBuild:
     def __init__(self, username):
         self.username = username
+        ensure_nltk_data()
         self.lemmatizer = WordNetLemmatizer()
         self.ignore_words = ['?', '!', '.', ',']
         self.user_data = user_data

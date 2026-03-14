@@ -10,8 +10,25 @@ import tensorflow as tf
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
 
+NLTK_RESOURCES = {
+    "tokenizers/punkt": "punkt",
+    "tokenizers/punkt_tab": "punkt_tab",
+    "corpora/wordnet": "wordnet",
+    "corpora/omw-1.4": "omw-1.4",
+}
+
+
+def ensure_nltk_data():
+    for resource_path, package_name in NLTK_RESOURCES.items():
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            nltk.download(package_name, quiet=True)
+
+
 class ChatbotModel():
     def __init__(self, user_data):
+        ensure_nltk_data()
         self.lemmatizer = WordNetLemmatizer()
         self.ignore_words = ['?', '!', '.', ',']
         self.user_data = user_data

@@ -10,6 +10,8 @@ It uses playwright for web automation tasks, and to answer questions while apply
 - pip
 - venv
 
+Use Python 3.12 for this project. TensorFlow in `requirements.txt` does not work correctly with Python 3.14.
+
 ### Installation
 
 step 1: Clone the repository
@@ -28,11 +30,11 @@ python3 -m venv jbvnv && source jbvnv/bin/activate
 ```
 For Windows powershell
 ```bash
-python -m venv jbvnv &&  jbvnv/scripts/activate.ps1
+py -3.12 -m venv jbvnv &&  jbvnv/scripts/activate.ps1
 ```
 For Windows cmd
 ```bash
-python -m venv jbvnv
+py -3.12 -m venv jbvnv
 call jbvnv/scripts/activate
 ```
 step 4: Install the required packages
