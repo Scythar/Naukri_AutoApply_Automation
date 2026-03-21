@@ -9,6 +9,12 @@ from playwright.sync_api import sync_playwright , expect
 import tensorflow as tf
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
+from .answer_utils import (
+    find_preferred_notice_option,
+    is_career_break_prompt,
+    is_notice_period_prompt,
+    preferred_notice_period_text,
+)
 
 NLTK_RESOURCES = {
     "tokenizers/punkt": "punkt",
@@ -180,6 +186,10 @@ class ChatbotAgent:
 
     def _override_answer(self, question, answer):
         normalized = " ".join(str(question or "").lower().split())
+        if is_notice_period_prompt(question):
+            return preferred_notice_period_text()
+        if is_career_break_prompt(question):
+            return "No"
         if normalized.startswith("how many years of experience"):
             return "3"
         if self._is_previous_employee_question(question):
@@ -226,15 +236,19 @@ class ChatbotAgent:
                             label_text = el.evaluate("el => el.value || el.getAttribute('aria-label') || el.id || ''").strip()
                         options.append({"id": option_id, "label": label_text, "el": el})
                     print("Options:", [opt["label"] for opt in options])
-                    finnas = self._match_option_by_answer(answer, options)
-                    if not finnas:
+                    selected_option = None
+                    if is_notice_period_prompt(question):
+                        selected_option = find_preferred_notice_option(options, label_getter=lambda option: option["label"])
+                    finnas = None if selected_option else self._match_option_by_answer(answer, options)
+                    if not finnas and not selected_option:
                         labels = [opt["label"] for opt in options]
                         best_label = self.match_by_sentiment(answer, labels)[0]
                         finnas = next((opt["id"] for opt in options if opt["label"] == best_label), None)
-                    if not finnas:
+                    if not finnas and not selected_option:
                         finnas = options[0]["id"]
-                    print('FINALANSWER',finnas)
-                    selected_option = next((opt for opt in options if opt["id"] == finnas), None)
+                    print('FINALANSWER', selected_option["label"] if selected_option else finnas)
+                    if not selected_option:
+                        selected_option = next((opt for opt in options if opt["id"] == finnas), None)
                     if selected_option and selected_option["id"]:
                         page.locator(f'label[for="{selected_option["id"]}"]').click(force=True)
                     else:
@@ -245,7 +259,11 @@ class ChatbotAgent:
                 elif suggs:
                     print("found suggs")
                     options = [el.evaluate('el => el.innerText') for el in suggs]
-                    finnas = self.match_by_sentiment(answer,options)[0]
+                    finnas = None
+                    if is_notice_period_prompt(question):
+                        finnas = find_preferred_notice_option(options)
+                    if not finnas:
+                        finnas = self.match_by_sentiment(answer,options)[0]
                     print(finnas)
                     page.click(f'text="{finnas}"')
                 elif dob:
