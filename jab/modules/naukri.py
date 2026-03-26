@@ -10,10 +10,24 @@ import tensorflow as tf
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
 from .answer_utils import (
+    find_preferred_hybrid_work_model_option,
     find_preferred_notice_option,
+    find_preferred_marital_status_option,
+    find_preferred_positive_preference_option,
+    find_preferred_title_option,
     is_career_break_prompt,
+    is_hybrid_work_model_prompt,
+    is_marital_status_prompt,
     is_notice_period_prompt,
+    is_positive_preference_mode_enabled,
+    is_positive_preference_prompt,
+    is_title_prompt,
+    preferred_hybrid_work_model_text,
+    preferred_marital_status_text,
     preferred_notice_period_text,
+    preferred_positive_preference_text,
+    preferred_title_text,
+    normalize_text,
 )
 
 NLTK_RESOURCES = {
@@ -22,6 +36,62 @@ NLTK_RESOURCES = {
     "corpora/wordnet": "wordnet",
     "corpora/omw-1.4": "omw-1.4",
 }
+
+JAVA_TITLE_PATTERNS = (
+    r"\bjava\b",
+    r"\bspring(?:\s+boot)?\b",
+    r"\bhibernate\b",
+    r"\bj2ee\b",
+    r"\bj2se\b",
+)
+
+DISALLOWED_BACKEND_TITLE_PATTERNS = (
+    r"\bpython\b",
+    r"\bphp\b",
+    r"\bdot\s*net\b",
+    r"(?<!\w)\.net\b",
+    r"(?<!\w)c#(?!\w)",
+    r"(?<!\w)c\+\+(?!\w)",
+    r"\bnode(?:\.js)?\b",
+    r"\bgolang\b",
+    r"\bgo\s+developer\b",
+    r"\bgo\s+engineer\b",
+    r"\bruby\b",
+    r"\brails\b",
+    r"\bdjango\b",
+    r"\bflask\b",
+    r"\blaravel\b",
+    r"\bscala\b",
+    r"\bkotlin\b",
+    r"\brust\b",
+    r"\bperl\b",
+)
+
+CONDITIONAL_NON_JAVA_LANGUAGE_TITLE_PATTERNS = (
+    r"\bjavascript\b",
+    r"\btypescript\b",
+)
+
+JOB_TITLE_SELECTORS = (
+    'h1[class*="jd-header-title"]',
+    'header h1',
+    "main h1",
+    "h1",
+)
+
+JOB_COMPANY_SELECTORS = (
+    '[class*="jd-header-comp-name"]',
+    '[class*="comp-name"]',
+    '.comp-name',
+    'a[href*="/company/"]',
+)
+
+JOB_DESCRIPTION_SELECTORS = (
+    '[class*="dang-inner-html"]',
+    'section[class*="job-desc"]',
+    'div[class*="job-desc"]',
+    '.job-desc',
+)
 
 
 def ensure_nltk_data():
@@ -106,6 +176,9 @@ class ChatbotAgent:
         global user
         user = username
         self.page = page
+        with open("./jab/data/user_data.json", "r", encoding="utf-8") as json_file:
+            self.profile_data = json.load(json_file)
+        self.positive_preference_mode = is_positive_preference_mode_enabled(self.profile_data)
         with open(f"./jab/data/{user}/training_data.json", 'r') as json_file:
             user_data = json.load(json_file)    
         self.model = ChatbotModel(user_data)
@@ -188,12 +261,20 @@ class ChatbotAgent:
         normalized = " ".join(str(question or "").lower().split())
         if is_notice_period_prompt(question):
             return preferred_notice_period_text()
+        if is_title_prompt(question):
+            return preferred_title_text()
+        if is_marital_status_prompt(question):
+            return preferred_marital_status_text()
+        if is_hybrid_work_model_prompt(question):
+            return preferred_hybrid_work_model_text()
         if is_career_break_prompt(question):
             return "No"
         if normalized.startswith("how many years of experience"):
             return "3"
         if self._is_previous_employee_question(question):
             return "No"
+        if self.positive_preference_mode and is_positive_preference_prompt(question):
+            return preferred_positive_preference_text()
         return answer
 
     def classify_new_question(self):
@@ -239,6 +320,20 @@ class ChatbotAgent:
                     selected_option = None
                     if is_notice_period_prompt(question):
                         selected_option = find_preferred_notice_option(options, label_getter=lambda option: option["label"])
+                    elif is_title_prompt(question):
+                        selected_option = find_preferred_title_option(options, label_getter=lambda option: option["label"])
+                    elif is_marital_status_prompt(question):
+                        selected_option = find_preferred_marital_status_option(
+                            options, label_getter=lambda option: option["label"]
+                        )
+                    elif is_hybrid_work_model_prompt(question):
+                        selected_option = find_preferred_hybrid_work_model_option(
+                            options, label_getter=lambda option: option["label"]
+                        )
+                    elif self.positive_preference_mode and is_positive_preference_prompt(question):
+                        selected_option = find_preferred_positive_preference_option(
+                            options, label_getter=lambda option: option["label"]
+                        )
                     finnas = None if selected_option else self._match_option_by_answer(answer, options)
                     if not finnas and not selected_option:
                         labels = [opt["label"] for opt in options]
@@ -262,6 +357,14 @@ class ChatbotAgent:
                     finnas = None
                     if is_notice_period_prompt(question):
                         finnas = find_preferred_notice_option(options)
+                    elif is_title_prompt(question):
+                        finnas = find_preferred_title_option(options)
+                    elif is_marital_status_prompt(question):
+                        finnas = find_preferred_marital_status_option(options)
+                    elif is_hybrid_work_model_prompt(question):
+                        finnas = find_preferred_hybrid_work_model_option(options)
+                    elif self.positive_preference_mode and is_positive_preference_prompt(question):
+                        finnas = find_preferred_positive_preference_option(options)
                     if not finnas:
                         finnas = self.match_by_sentiment(answer,options)[0]
                     print(finnas)
@@ -297,6 +400,122 @@ class NaukriBot:
         self.page_no = 1
         self.tabs = ["profile","apply","preference","similar_jobs"]
         self.pattern = re.compile(r'https://.*/myapply/saveApply\?strJobsarr=')
+        with open("./jab/data/user_data.json", "r", encoding="utf-8") as json_file:
+            self.profile_data = json.load(json_file)
+        blocked_companies = self.profile_data.get("Blocked companies", [])
+        if isinstance(blocked_companies, str):
+            blocked_companies = [blocked_companies]
+        self.blocked_companies = [company for company in blocked_companies if company]
+
+    def _extract_job_title_from_page(self):
+        for selector in JOB_TITLE_SELECTORS:
+            try:
+                nodes = self.page.locator(selector)
+                for i in range(min(nodes.count(), 3)):
+                    node = nodes.nth(i)
+                    if not node.is_visible():
+                        continue
+                    title_text = (node.inner_text() or "").strip()
+                    if title_text:
+                        return title_text
+            except Exception:
+                continue
+        return ""
+
+    def _extract_company_name_from_page(self):
+        for selector in JOB_COMPANY_SELECTORS:
+            try:
+                nodes = self.page.locator(selector)
+                for i in range(min(nodes.count(), 3)):
+                    node = nodes.nth(i)
+                    if not node.is_visible():
+                        continue
+                    company_text = (node.inner_text() or "").strip()
+                    if company_text:
+                        return company_text
+            except Exception:
+                continue
+        return ""
+
+    def _extract_job_description(self):
+        best_text = ""
+        for selector in JOB_DESCRIPTION_SELECTORS:
+            try:
+                nodes = self.page.locator(selector)
+                for i in range(min(nodes.count(), 4)):
+                    node = nodes.nth(i)
+                    if not node.is_visible():
+                        continue
+                    description_text = (node.inner_text() or "").strip()
+                    if len(description_text) > len(best_text):
+                        best_text = description_text
+            except Exception:
+                continue
+
+        if best_text:
+            return best_text
+
+        try:
+            main_text = (self.page.locator("main").inner_text() or "").strip()
+            if main_text:
+                return main_text
+        except Exception:
+            pass
+
+        try:
+            return (self.page.locator("body").inner_text() or "").strip()
+        except Exception:
+            return ""
+
+    def _title_has_java_backend(self, title):
+        lowered_title = " ".join(str(title or "").lower().split())
+        return any(re.search(pattern, lowered_title) for pattern in JAVA_TITLE_PATTERNS)
+
+    def _title_has_disallowed_backend(self, title):
+        lowered_title = " ".join(str(title or "").lower().split())
+        return any(re.search(pattern, lowered_title) for pattern in DISALLOWED_BACKEND_TITLE_PATTERNS)
+
+    def _title_has_conditional_non_java_language(self, title):
+        lowered_title = " ".join(str(title or "").lower().split())
+        return any(re.search(pattern, lowered_title) for pattern in CONDITIONAL_NON_JAVA_LANGUAGE_TITLE_PATTERNS)
+
+    def _is_blocked_company(self, company_name):
+        normalized_company = normalize_text(company_name)
+        if not normalized_company:
+            return False
+        for blocked_company in self.blocked_companies:
+            normalized_blocked_company = normalize_text(blocked_company)
+            if not normalized_blocked_company:
+                continue
+            if (
+                normalized_blocked_company in normalized_company
+                or normalized_company in normalized_blocked_company
+            ):
+                return True
+        return False
+
+    def _is_java_job(self, title, description):
+        normalized_title = normalize_text(title)
+        normalized_description = normalize_text(description)
+
+        if not normalized_title:
+            return False, "missing job title"
+
+        if self._title_has_disallowed_backend(title):
+            return False, "title mentions non-Java backend technology"
+
+        if self._title_has_conditional_non_java_language(title):
+            allows_full_stack_java = (
+                any(keyword in normalized_title for keyword in ["full stack", "fullstack", "sdet"])
+                and (self._title_has_java_backend(title) or re.search(r"\bjava\b", normalized_description))
+            )
+            if not allows_full_stack_java:
+                return False, "title mentions a non-Java programming language"
+
+        if not re.search(r"\bjava\b", normalized_description):
+            return False, "job description does not mention Java"
+
+        return True, "matches Java job filters"
 
     def init_browser(self):
         playwright = sync_playwright().start()
@@ -352,23 +571,49 @@ class NaukriBot:
         self.page.wait_for_load_state('networkidle')
         job_links = self.page.eval_on_selector_all(
             '.title',
-            'elements => elements.map(element => element.getAttribute("href")) .filter(href => href !== null)'
+            '''elements => elements
+                .map(element => ({
+                    href: element.getAttribute("href"),
+                    title: (element.textContent || "").trim(),
+                    company: (
+                        (
+                            (element.closest("article") || element.closest("div") || element.parentElement)
+                            ?.querySelector('[class*="comp-name"], .comp-name')
+                        )?.textContent || ""
+                    ).trim(),
+                }))
+                .filter(item => item.href !== null)'''
         )
         if not job_links:
             print(f"No job links found on page {self.page_no}.")
             return
 
-        for jl in job_links:
+        for job in job_links:
             if self.applied_count >= self.applno:
                 print(f"Applied to {self.applied_count} jobs.")
                 break
             try:
+                jl = job["href"]
+                listing_title = (job.get("title") or "").strip()
+                listing_company = (job.get("company") or "").strip()
                 self.page.wait_for_timeout(2000)
                 self.page.goto(jl)
                 self.page.wait_for_load_state('networkidle')
+                page_title = self._extract_job_title_from_page()
+                page_company = self._extract_company_name_from_page()
+                job_title = page_title or listing_title
+                company_name = page_company or listing_company
+                if self._is_blocked_company(company_name):
+                    print(f"Skipping blocked company ({company_name}): {job_title or jl}")
+                    continue
+                job_description = self._extract_job_description()
+                should_apply, reason = self._is_java_job(job_title, job_description)
+                if not should_apply:
+                    print(f"Skipping job due to filter ({reason}): {job_title or jl}")
+                    continue
                 apply = self.page.query_selector('#apply-button')
                 if not apply:
-                    print(f"Skipping job without apply button: {jl}")
+                    print(f"Skipping job without apply button: {job_title or jl}")
                     continue
 
                 apply.click()
@@ -381,7 +626,7 @@ class NaukriBot:
                         expect(self.page).to_have_url(self.pattern)
                         self.applied_count += 1
                     except:
-                        print(f"Skipping job (not applied): {jl}")
+                        print(f"Skipping job (not applied): {job_title or jl}")
                         continue
             except Exception as e:
                 print(jl, "_______", e)

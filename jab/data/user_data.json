@@ -1,5 +1,5 @@
 {
-    "Salutation": "",
+    "Salutation": "Mr.",
     "Full name": "Nitesh Singh",
     "First name": "Nitesh",
     "Last name": "Singh",
@@ -71,6 +71,10 @@
 
     "Date of birth": "11/09/1995",
     "Gender": "Male",
+    "Marital Status": "Single",
+    "Positive preference mode": "Yes",
+    "Are you comfortable with Hybrid Work Model?": "Yes",
+    "Blocked companies": ["Accenture"],
     "Preferred work location": "Bengaluru",
     "Are you on a career break?": "No",
     "Are you a Previous Employee, Intern, Or Contractor?": "No",
