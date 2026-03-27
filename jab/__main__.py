@@ -38,9 +38,9 @@ def main():
             location = args.location if args.location is not None else input("Job location (optional, leave blank if none): ")
             location = location.strip() if isinstance(location, str) else location
             location = location if location else None
-            jobAge = args.job_age if args.job_age is not None else input("Age of job posting in days (default set to 3 days): ")
+            jobAge = args.job_age if args.job_age is not None else input("Age of job posting in days (default set to 1 day): ")
             experience = int(experience) if experience not in [None, ""] else None
-            jobAge = int(jobAge) if jobAge not in [None, ""] else 3
+            jobAge = int(jobAge) if jobAge not in [None, ""] else 1
             nb.filter_apply(search,experience,location,jobAge)
         else:
             tab = args.tab if args.tab else input(f"Choose from these options to start: {nb.tabs} : ")

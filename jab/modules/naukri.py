@@ -645,7 +645,7 @@ class NaukriBot:
             print(f'going to page {self.page_no}')
             self.apply_()
 
-    def filter_apply(self,s,e='',l='',ja='3'):
+    def filter_apply(self,s,e='',l='',ja='1'):
         self.search = s
         if not self.search:
             print("Search keyword required")
@@ -664,7 +664,7 @@ class NaukriBot:
 
     def filter_(self):
         serch = self.page.locator(".nI-gNb-sb__icon-wrapper")
-        serch.click() 
+        serch.click()
         self.page.locator('input[placeholder="Enter keyword / designation / companies"]').type(self.search,delay=100)
         if self.location:
             self.page.locator('input[placeholder="Enter location"]').type(self.location,delay=100)
@@ -673,10 +673,19 @@ class NaukriBot:
             self.page.locator(f'li[index="{self.experience}"]').click()
         serch.click()
         self.page.wait_for_load_state('load')
-        curl = self.page.url 
-        if self.jobage:
-            nurl = curl+f"&jobAge={self.jobage}"
-            self.page.goto(nurl)
+        # Apply Freshness filter "Last 1 day" via left panel UI
+        try:
+            freshness = self.page.locator('label:has-text("Last 1 day")').first
+            freshness.scroll_into_view_if_needed()
+            freshness.click()
+            self.page.wait_for_load_state('load')
+            print("Freshness filter set to: Last 1 day")
+        except Exception as e:
+            print(f"Could not click Freshness filter via UI, falling back to URL param: {e}")
+            curl = self.page.url
+            if self.jobage:
+                nurl = curl + f"&jobAge={self.jobage}"
+                self.page.goto(nurl)
 
     def start_apply(self,tab):
         self.tabIndex = 0
