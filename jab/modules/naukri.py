@@ -1,7 +1,9 @@
 ﻿import time
 import re
+import threading
+import sys
 import numpy as np
-import nltk 
+import nltk
 import time
 import json
 from urllib.parse import urlparse, urlunparse
@@ -406,6 +408,51 @@ class NaukriBot:
         if isinstance(blocked_companies, str):
             blocked_companies = [blocked_companies]
         self.blocked_companies = [company for company in blocked_companies if company]
+        self._pause_event = threading.Event()
+        self._pause_event.set()  # running by default
+        self._stop_listener = False
+        self._listener_thread = None
+
+    def _start_pause_listener(self):
+        self._stop_listener = False
+        self._listener_thread = threading.Thread(target=self._key_listener, daemon=True)
+        self._listener_thread.start()
+
+    def _key_listener(self):
+        print("Press 'P' at any time to pause/resume the automation.")
+        try:
+            import msvcrt
+            while not self._stop_listener:
+                if msvcrt.kbhit():
+                    key = msvcrt.getch().decode('utf-8', errors='ignore').lower()
+                    if key == 'p':
+                        self._toggle_pause()
+                time.sleep(0.1)
+        except ImportError:
+            import tty, termios, select
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(fd)
+                while not self._stop_listener:
+                    if select.select([sys.stdin], [], [], 0.1)[0]:
+                        key = sys.stdin.read(1).lower()
+                        if key == 'p':
+                            self._toggle_pause()
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+    def _toggle_pause(self):
+        if self._pause_event.is_set():
+            self._pause_event.clear()
+            print("\n[PAUSED] Press 'P' again to resume...")
+        else:
+            self._pause_event.set()
+            print("\n[RESUMED] Continuing...")
+
+    def _check_pause(self):
+        if not self._pause_event.is_set():
+            self._pause_event.wait()
 
     def _extract_job_title_from_page(self):
         for selector in JOB_TITLE_SELECTORS:
@@ -589,6 +636,7 @@ class NaukriBot:
             return
 
         for job in job_links:
+            self._check_pause()
             if self.applied_count >= self.applno:
                 print(f"Applied to {self.applied_count} jobs.")
                 break
@@ -655,6 +703,7 @@ class NaukriBot:
         self.jobage = ja
         self.init_browser()
         self.login()
+        self._start_pause_listener()
         time.sleep(1)
         self.filter_()
         self.base_page_url = self.page.url
@@ -692,6 +741,7 @@ class NaukriBot:
         self.tab = tab
         self.init_browser()
         if self.login():
+            self._start_pause_listener()
             botactions = self.bot_actions()
             return botactions
         
@@ -733,5 +783,6 @@ class NaukriBot:
             print(f"applied {self.applied_count} jobs but an error occured :===>{str(e)}")
         
     def close(self):
+        self._stop_listener = True
         self.browser.close()
 
