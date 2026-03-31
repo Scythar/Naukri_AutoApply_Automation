@@ -19,12 +19,14 @@ from .answer_utils import (
     find_preferred_title_option,
     is_career_break_prompt,
     is_hybrid_work_model_prompt,
+    is_last_working_day_prompt,
     is_marital_status_prompt,
     is_notice_period_prompt,
     is_positive_preference_mode_enabled,
     is_positive_preference_prompt,
     is_title_prompt,
     preferred_hybrid_work_model_text,
+    preferred_last_working_day_text,
     preferred_marital_status_text,
     preferred_notice_period_text,
     preferred_positive_preference_text,
@@ -263,6 +265,8 @@ class ChatbotAgent:
         normalized = " ".join(str(question or "").lower().split())
         if is_notice_period_prompt(question):
             return preferred_notice_period_text()
+        if is_last_working_day_prompt(question):
+            return preferred_last_working_day_text()
         if is_title_prompt(question):
             return preferred_title_text()
         if is_marital_status_prompt(question):
