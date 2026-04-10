@@ -709,9 +709,16 @@ class NaukriBot:
         self.login()
         self._start_pause_listener()
         time.sleep(1)
-        self.filter_()
-        self.base_page_url = self.page.url
-        self.apply_()
+        max_restarts = 5
+        for attempt in range(max_restarts + 1):
+            if attempt > 0:
+                print(f"\nRestarting search (attempt {attempt}/{max_restarts})...")
+                self.page_no = 1
+            self.filter_()
+            self.base_page_url = self.page.url
+            self.apply_()
+            if self.applied_count >= self.applno:
+                break
         self.page.close()
         return {"response":"applied successfully","applied":self.applied_count}
 
