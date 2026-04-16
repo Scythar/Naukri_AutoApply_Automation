@@ -18,15 +18,21 @@ from .answer_utils import (
     find_preferred_positive_preference_option,
     find_preferred_title_option,
     is_career_break_prompt,
+    is_current_ctc_prompt,
+    is_expected_ctc_prompt,
     is_hybrid_work_model_prompt,
     is_last_working_day_prompt,
     is_marital_status_prompt,
+    is_notice_period_buyout_prompt,
     is_notice_period_prompt,
     is_positive_preference_mode_enabled,
     is_positive_preference_prompt,
     is_title_prompt,
+    preferred_current_ctc_text,
+    preferred_expected_ctc_text,
     preferred_hybrid_work_model_text,
     preferred_last_working_day_text,
+    preferred_notice_period_buyout_text,
     preferred_marital_status_text,
     preferred_notice_period_text,
     preferred_positive_preference_text,
@@ -263,10 +269,16 @@ class ChatbotAgent:
 
     def _override_answer(self, question, answer):
         normalized = " ".join(str(question or "").lower().split())
+        if is_notice_period_buyout_prompt(question):
+            return preferred_notice_period_buyout_text()
         if is_notice_period_prompt(question):
             return preferred_notice_period_text()
         if is_last_working_day_prompt(question):
             return preferred_last_working_day_text()
+        if is_current_ctc_prompt(question):
+            return preferred_current_ctc_text(question)
+        if is_expected_ctc_prompt(question):
+            return preferred_expected_ctc_text(question)
         if is_title_prompt(question):
             return preferred_title_text()
         if is_marital_status_prompt(question):
@@ -276,7 +288,7 @@ class ChatbotAgent:
         if is_career_break_prompt(question):
             return "No"
         if normalized.startswith("how many years of experience"):
-            return "3"
+            return "3.5"
         if self._is_previous_employee_question(question):
             return "No"
         if self.positive_preference_mode and is_positive_preference_prompt(question):
