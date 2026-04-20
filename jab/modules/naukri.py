@@ -721,17 +721,22 @@ class NaukriBot:
         self.login()
         self._start_pause_listener()
         time.sleep(1)
-        max_restarts = 5
-        for attempt in range(max_restarts + 1):
-            if attempt > 0:
-                print(f"\nRestarting search (attempt {attempt}/{max_restarts})...")
-                self.page_no = 1
-            self.filter_()
-            self.base_page_url = self.page.url
-            self.apply_()
-            if self.applied_count >= self.applno:
-                break
-        self.page.close()
+        try:
+            max_restarts = 5
+            for attempt in range(max_restarts + 1):
+                if attempt > 0:
+                    print(f"\nRestarting search (attempt {attempt}/{max_restarts})...")
+                    self.page_no = 1
+                self.filter_()
+                self.base_page_url = self.page.url
+                self.apply_()
+                if self.applied_count >= self.applno:
+                    break
+        except KeyboardInterrupt:
+            print(f"\nStopped by user. Total jobs applied: {self.applied_count}")
+        finally:
+            self._stop_listener = True
+            self.page.close()
         return {"response":"applied successfully","applied":self.applied_count}
 
     def filter_(self):
@@ -765,7 +770,13 @@ class NaukriBot:
         self.init_browser()
         if self.login():
             self._start_pause_listener()
-            botactions = self.bot_actions()
+            try:
+                botactions = self.bot_actions()
+            except KeyboardInterrupt:
+                print(f"\nStopped by user. Total jobs applied: {self.applied_count}")
+                botactions = {"response": "stopped by user", "applied": self.applied_count}
+            finally:
+                self._stop_listener = True
             return botactions
         
     def bot_actions(self):
