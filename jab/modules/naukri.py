@@ -424,6 +424,7 @@ class NaukriBot:
         if isinstance(blocked_companies, str):
             blocked_companies = [blocked_companies]
         self.blocked_companies = [company for company in blocked_companies if company]
+        self.max_pages = None
         self._pause_event = threading.Event()
         self._pause_event.set()  # running by default
         self._stop_listener = False
@@ -697,6 +698,9 @@ class NaukriBot:
                 continue
 
         if self.applied_count < self.applno:
+            if self.max_pages and self.page_no >= self.max_pages:
+                print(f"Reached page limit ({self.max_pages}). Stopping this phase.")
+                return
             self.page_no += 1
             parsed = urlparse(self.base_page_url)
             new_path = parsed.path + f"-{self.page_no}"
@@ -709,7 +713,7 @@ class NaukriBot:
             print(f'going to page {self.page_no}')
             self.apply_()
 
-    def filter_apply(self,s,e='',l='',ja='1'):
+    def filter_apply(self,s,e='',l='',ja='1',max_pages=None):
         self.search = s
         if not self.search:
             print("Search keyword required")
@@ -717,26 +721,30 @@ class NaukriBot:
         self.experience = e
         self.location = l
         self.jobage = ja
+        self.max_pages = max_pages
         self.init_browser()
         self.login()
         self._start_pause_listener()
         time.sleep(1)
         try:
-            max_restarts = 5
+            max_restarts = 0 if max_pages else 5
             for attempt in range(max_restarts + 1):
                 if attempt > 0:
                     print(f"\nRestarting search (attempt {attempt}/{max_restarts})...")
                     self.page_no = 1
+                prev_count = self.applied_count
                 self.filter_()
                 self.base_page_url = self.page.url
                 self.apply_()
                 if self.applied_count >= self.applno:
                     break
+                if self.applied_count == prev_count:
+                    print("Search exhausted, no new jobs found.")
+                    break
         except KeyboardInterrupt:
             print(f"\nStopped by user. Total jobs applied: {self.applied_count}")
         finally:
-            self._stop_listener = True
-            self.page.close()
+            self.close()
         return {"response":"applied successfully","applied":self.applied_count}
 
     def filter_(self):

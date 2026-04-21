@@ -81,7 +81,7 @@ python -m jab --email niteshsingh5375@gmail.com --apply --filters
 .\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --apply
 .\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --apply --filters
 
-.\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --apply --filters --password "nitesh5375" --jobs 1000 --search "java developer" --experience 3 --location "" --job-age 2
+.\jbvnv\Scripts\python -m jab --email niteshsingh5375@gmail.com --apply --filters --password "nitesh5375" --jobs 1000 --search "java developer" --experience 3 --location "" --job-age 1
 
 ```
 follow along the prompts to put in your password and select the filters you would like to apply.
