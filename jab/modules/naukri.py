@@ -2,6 +2,7 @@
 import re
 import threading
 import sys
+import os
 import numpy as np
 import nltk
 import time
@@ -25,6 +26,7 @@ from .answer_utils import (
     is_marital_status_prompt,
     is_notice_period_buyout_prompt,
     is_notice_period_prompt,
+    is_tech_experience_prompt,
     is_positive_preference_mode_enabled,
     is_positive_preference_prompt,
     is_title_prompt,
@@ -189,8 +191,10 @@ class ChatbotAgent:
         with open("./jab/data/user_data.json", "r", encoding="utf-8") as json_file:
             self.profile_data = json.load(json_file)
         self.positive_preference_mode = is_positive_preference_mode_enabled(self.profile_data)
+        skills = self.profile_data.get("Skills", {})
+        self.tech_keywords = tuple(normalize_text(s) for s in skills.keys() if normalize_text(s))
         with open(f"./jab/data/{user}/training_data.json", 'r') as json_file:
-            user_data = json.load(json_file)    
+            user_data = json.load(json_file)
         self.model = ChatbotModel(user_data)
         self.analyzer = SentimentIntensityAnalyzer()
 
@@ -289,6 +293,8 @@ class ChatbotAgent:
             return "No"
         if normalized.startswith("how many years of experience"):
             return "3.5"
+        if is_tech_experience_prompt(question, self.tech_keywords):
+            return "Yes"
         if self._is_previous_employee_question(question):
             return "No"
         if self.positive_preference_mode and is_positive_preference_prompt(question):
@@ -411,6 +417,7 @@ class NaukriBot:
     def __init__(self, usreml, usrpas,username,number=10):
         self.browser = None
         self.page = None
+        self._playwright = None
         self.usr = [usreml, usrpas]
         self.username = username
         self.applno = number
@@ -582,11 +589,11 @@ class NaukriBot:
         return True, "matches Java job filters"
 
     def init_browser(self):
-        playwright = sync_playwright().start()
+        self._playwright = sync_playwright().start()
         args = ["--disable-blink-features=AutomationControlled"]
-        self.browser =  playwright.chromium.launch(headless=False,args=args)
+        self.browser = self._playwright.chromium.launch(headless=False, args=args)
         self.page = self.browser.new_page()
-        self.cba = ChatbotAgent(self.page,self.username)
+        self.cba = ChatbotAgent(self.page, self.username)
 
     def login(self):
         try:
@@ -631,6 +638,40 @@ class NaukriBot:
         except Exception:
             return {"status":"failed"}
         
+    def _get_company_site_apply_url(self):
+        selectors = [
+            'a[href*="applyredirect"]',
+            'a:has-text("Apply on Company Site")',
+            'a:has-text("Apply on company site")',
+            'a:has-text("company site")',
+            'button:has-text("Apply on Company Site")',
+            '[class*="company-btn"]',
+            '[class*="companyBtn"]',
+        ]
+        for selector in selectors:
+            try:
+                el = self.page.query_selector(selector)
+                if el:
+                    href = el.get_attribute("href") or el.get_attribute("data-href")
+                    if href:
+                        return href
+            except Exception:
+                continue
+        return None
+
+    def _save_external_apply(self, job_title, company, naukri_url, apply_url):
+        filepath = "./external_apply.txt"
+        if os.path.exists(filepath):
+            with open(filepath, "r", encoding="utf-8") as f:
+                if naukri_url in f.read():
+                    print(f"Already in external_apply.txt, skipping: {job_title} @ {company}")
+                    return
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        entry = f"[{timestamp}] | {job_title} @ {company} | Naukri: {naukri_url} | Apply: {apply_url}\n"
+        with open(filepath, "a", encoding="utf-8") as f:
+            f.write(entry)
+        print(f"Saved to external_apply.txt: {job_title} @ {company}")
+
     def apply_(self):
         self.page.wait_for_load_state('networkidle')
         job_links = self.page.eval_on_selector_all(
@@ -678,7 +719,8 @@ class NaukriBot:
                     continue
                 apply = self.page.query_selector('#apply-button')
                 if not apply:
-                    print(f"Skipping job without apply button: {job_title or jl}")
+                    external_url = self._get_company_site_apply_url() or jl
+                    self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
                     continue
 
                 apply.click()
@@ -826,5 +868,12 @@ class NaukriBot:
         
     def close(self):
         self._stop_listener = True
-        self.browser.close()
+        try:
+            self.browser.close()
+        except Exception:
+            pass
+        try:
+            self._playwright.stop()
+        except Exception:
+            pass
 
