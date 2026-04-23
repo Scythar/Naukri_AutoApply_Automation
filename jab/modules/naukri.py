@@ -13,6 +13,7 @@ import tensorflow as tf
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
 from .answer_utils import (
+    DIRECT_QUESTION_ANSWERS,
     find_preferred_hybrid_work_model_option,
     find_preferred_notice_option,
     find_preferred_marital_status_option,
@@ -193,6 +194,7 @@ class ChatbotAgent:
         self.positive_preference_mode = is_positive_preference_mode_enabled(self.profile_data)
         skills = self.profile_data.get("Skills", {})
         self.tech_keywords = tuple(normalize_text(s) for s in skills.keys() if normalize_text(s))
+        self._question_overridden = False
         with open(f"./jab/data/{user}/training_data.json", 'r') as json_file:
             user_data = json.load(json_file)
         self.model = ChatbotModel(user_data)
@@ -273,6 +275,9 @@ class ChatbotAgent:
 
     def _override_answer(self, question, answer):
         normalized = " ".join(str(question or "").lower().split())
+        self._question_overridden = True
+        if normalized in DIRECT_QUESTION_ANSWERS:
+            return DIRECT_QUESTION_ANSWERS[normalized]
         if is_notice_period_buyout_prompt(question):
             return preferred_notice_period_buyout_text()
         if is_notice_period_prompt(question):
@@ -299,7 +304,21 @@ class ChatbotAgent:
             return "No"
         if self.positive_preference_mode and is_positive_preference_prompt(question):
             return preferred_positive_preference_text()
+        self._question_overridden = False
         return answer
+
+    def _log_new_question(self, question, reason):
+        filepath = "./newQuestions.txt"
+        question_clean = " ".join(question.strip().split())
+        if os.path.exists(filepath):
+            with open(filepath, "r", encoding="utf-8") as f:
+                if question_clean in f.read():
+                    return
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        entry = f"[{timestamp}] | {reason} | Q: {question_clean}\n"
+        with open(filepath, "a", encoding="utf-8") as f:
+            f.write(entry)
+        print(f"Logged to newQuestions.txt [{reason}]: {question_clean[:80]}")
 
     def classify_new_question(self):
         page=self.page
@@ -314,16 +333,18 @@ class ChatbotAgent:
                 question = question_element.inner_text()
                 answer = self.model.chatbot_response(question)
                 answer = self._override_answer(question, answer)
-                print('answer',answer)
+                print('answer', answer)
+                if not self._question_overridden:
+                    self._log_new_question(question, "NEW (no override matched)")
 
                 checkboxes = cbcn.query_selector_all('input[type="checkbox"]')
                 radio_buttons = cbcn.query_selector_all('input[type="radio"]')
-                text_input = page.locator('.chatbot_MessageContainer .textArea')
+                text_input = page.locator('.chatbot_MessageContainer .textArea, .chatbot_MessageContainer input[type="text"], .chatbot_MessageContainer input[type="number"]').first
                 chip = page.query_selector('.chatbot_MessageContainer .chipsContainer .chatbot_Chip')
                 suggs = cbcn.query_selector_all('.ssc__heading')
                 dob = cbcn.query_selector(".dob__container")
                 if chip:
-                    print("skipping")
+                    self._log_new_question(question, "SKIPPED (chip auto-clicked)")
                     chip.click()
                     continue
                 elif radio_buttons or checkboxes:
@@ -400,7 +421,8 @@ class ChatbotAgent:
                     page.locator("input[name='year']").type(dob[2],delay=100)
 
                 else:
-                    return 
+                    self._log_new_question(question, "SKIPPED (no input element found)")
+                    return
                 send = page.locator('.sendMsg')
                 try:
                     expect(send).to_be_enabled()
@@ -583,8 +605,13 @@ class NaukriBot:
             if not allows_full_stack_java:
                 return False, "title mentions a non-Java programming language"
 
-        if not re.search(r"\bjava\b", normalized_description):
+        java_desc_count = len(re.findall(r"\bjava\b", normalized_description))
+
+        if java_desc_count == 0:
             return False, "job description does not mention Java"
+
+        if not self._title_has_java_backend(title) and java_desc_count < 2:
+            return False, "Java only mentioned incidentally in description (not a primary requirement)"
 
         return True, "matches Java job filters"
 
@@ -719,6 +746,9 @@ class NaukriBot:
                     continue
                 apply = self.page.query_selector('#apply-button')
                 if not apply:
+                    if not re.search(r"\bjava\b", normalize_text(job_description)):
+                        print(f"Skipping external apply (no Java in description): {job_title or jl}")
+                        continue
                     external_url = self._get_company_site_apply_url() or jl
                     self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
                     continue
