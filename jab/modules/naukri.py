@@ -59,6 +59,10 @@ JAVA_TITLE_PATTERNS = (
 )
 
 DISALLOWED_BACKEND_TITLE_PATTERNS = (
+    # Stacks
+    r"\bmern\b",
+    r"\bmean\b",
+    # Languages
     r"\bpython\b",
     r"\bphp\b",
     r"\bdot\s*net\b",
@@ -78,11 +82,86 @@ DISALLOWED_BACKEND_TITLE_PATTERNS = (
     r"\bkotlin\b",
     r"\brust\b",
     r"\bperl\b",
+    r"\bswift\b",
+    r"\bcobol\b",
+    r"\brpg\s+developer\b",
+    r"\brpg\s+engineer\b",
+    # Platforms / Low-code / CRM / ERP
+    r"\bmedia\s*cloud\b",
+    r"\bservicenow\b",
+    r"\bsalesforce\b",
+    r"\bmulesoft\b",
+    r"\bsap\b",
+    r"\babap\b",
+    r"\bsiebel\b",
+    r"\bsitecore\b",
+    r"\bsharepoint\b",
+    r"\bworkday\b",
+    r"\bdynamics\b",
+    r"\bpega\b",
+    r"\bappian\b",
+    r"\boutsystems\b",
+    r"\bmendix\b",
+    r"\btibco\b",
+    r"\bboomi\b",
+    # Data / ETL tools
+    r"\binformatica\b",
+    r"\bdatastage\b",
+    r"\btalend\b",
+    r"\bpentaho\b",
+    # BI / Visualisation
+    r"\bpower\s*bi\b",
+    r"\btableau\b",
+    r"\blooker\b",
+    r"\bqlik\b",
+    # Mobile
+    r"\bandroid\b",
+    r"\bios\b",
+    r"\bflutter\b",
+    r"\bxamarin\b",
+    # Mainframe
+    r"\bmainframe\b",
+    r"\bcics\b",
+    r"\bjcl\b",
+    # DevOps / Infrastructure
+    r"\bdevops\b",
+    # Security roles
+    r"\bsecurity\s+(?:developer|engineer|analyst)\b",
+    r"\bcybersecurity\b",
+    r"\bdevsecops\b",
+    r"\bpentester\b",
+    r"\bpenetration\s+test(?:er|ing)?\b",
+    # Frontend roles
+    r"\bfront[\s\-]?end\s+(?:developer|engineer)\b",
+    r"\bfrontend\s+(?:developer|engineer)\b",
+    r"\bui\s+developer\b",
+    r"\bui\s+engineer\b",
+    # QA / Testing roles
+    r"\btest\b",
+    r"\bqa\b",
+    r"\bquality\s+assurance\b",
+    r"\bsdet\b",
+    # GenAI / AI/ML roles
+    r"\bgenai\b",
+    r"\bgen\s*ai\b",
+    r"\bgenerative\s+ai\b",
+    r"\bprompt\s+engineer\b",
+    r"\bml\s+engineer\b",
+    r"\bmachine\s+learning\s+engineer\b",
+    r"\bai\s+(?:developer|engineer|scientist)\b",
+    # Data roles
+    r"\bdata\s+engineer\b",
+    r"\bdata\s+scientist\b",
+    r"\bdata\s+analyst\b",
+    r"\bdata\s+developer\b",
 )
 
 CONDITIONAL_NON_JAVA_LANGUAGE_TITLE_PATTERNS = (
     r"\bjavascript\b",
     r"\btypescript\b",
+    r"\breact(?:\.js)?\b",
+    r"\bangular\b",
+    r"\bvue(?:\.js)?\b",
 )
 
 JOB_TITLE_SELECTORS = (
