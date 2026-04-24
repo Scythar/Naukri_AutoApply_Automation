@@ -103,6 +103,10 @@ EXPECTED_CTC_KEYWORDS = (
 )
 
 DIRECT_QUESTION_ANSWERS = {
+    "are you available to attend one mandatory round of face-to-face interviews?": "Yes",
+    "are you available to attend one mandatory round of face-to-face interviews": "Yes",
+    "relevant experience in core java (in years) and java version used (java 8 or higher)?": "3.5 years Java 17",
+    "relevant experience in core java (in years) and java version used (java 8 or higher)": "3.5 years Java 17",
     "what is your expected annual ctc in inr": "2000000",
     "what is your expected annual ctc in inr ?": "2000000",
     "what is your expected ctc in lacs per annum": "20",
@@ -186,6 +190,151 @@ POSITIVE_PREFERENCE_BLOCKERS = (
     "last working day",
     "relieving date",
 )
+
+INTERVIEW_AVAILABILITY_KEYWORDS = (
+    "face to face",
+    "face-to-face",
+    "in person interview",
+    "in-person interview",
+    "inperson interview",
+    "available for interview",
+    "attend an interview",
+    "attend interview",
+    "come for interview",
+    "appear for interview",
+    "walk in interview",
+    "walk-in interview",
+    "comfortable taking",
+    "comfortable attending",
+    "online test",
+    "aptitude test",
+    "assessment test",
+    "technical test",
+    "coding test",
+    "coding round",
+)
+
+LOCATION_KEYWORDS = (
+    "current location",
+    "your location",
+    "present location",
+    "current city",
+    "preferred location",
+    "work location",
+    "residing city",
+    "city of residence",
+    "where are you located",
+    "where are you based",
+    "base location",
+    "current base",
+)
+
+PAN_KEYWORDS = (
+    "pan number",
+    "pan card",
+    "pan no",
+    "permanent account number",
+    "share your pan",
+    "your pan",
+    "pan is mandatory",
+    "pan mandatory",
+)
+
+HOLDING_OFFER_KEYWORDS = (
+    "holding any offer",
+    "do you have any offer",
+    "any offer in hand",
+    "have any offer",
+    "offers in hand",
+    "holding offer",
+    "current offer",
+    "offer letter",
+)
+
+# Yes/No skill questions — "have you used X", "do you know X"
+TECH_YESNO_PHRASES = (
+    "do you know",
+    "have you used",
+    "have you worked with",
+    "are you familiar with",
+    "do you have knowledge",
+    "do you have experience with",
+    "have you implemented",
+    "have you built",
+    "can you code",
+    "do you code",
+    "have you coded",
+    "do you understand",
+    "have you written",
+    "have you developed",
+    "are you experienced in",
+    "have you used java",
+    "have you experience",
+    "do you have hands",
+)
+
+# If these appear alongside a tech keyword, it's a quantity question not yes/no
+EXPERIENCE_QUANTITY_MARKERS = (
+    "in years",
+    "how many",
+    "how long",
+    "years of",
+    "years exp",
+    "months of",
+    "number of years",
+    "total exp",
+    "overall exp",
+    "relevant exp",
+    "total experience",
+    "overall experience",
+    "years have you",
+)
+
+PREVIOUS_COMPANY_KEYWORDS = (
+    "earlier have you worked",
+    "have you previously worked",
+    "previously worked at",
+    "previously worked in",
+    "worked at your previous",
+    "have you ever worked for",
+    "ex employee of",
+    "former employee",
+    "have you worked in",
+    "have you worked at",
+)
+
+CONDITIONAL_FOLLOWUP_PREFIXES = (
+    "if yes,",
+    "if yes ",
+    "if yes-",
+    "if applicable,",
+    "if applicable ",
+)
+
+EMPLOYEE_ID_KEYWORDS = (
+    "employee id",
+    "employee number",
+    "emp id",
+    "staff id",
+)
+
+HIGHEST_DEGREE_KEYWORDS = (
+    "highest degree",
+    "highest qualification",
+    "highest education",
+    "educational qualification",
+    "highest level of education",
+    "highest academic",
+)
+
+# Each inner list is one priority level; earlier lists win.
+# normalize_text("M.Tech") → "m tech", ("MSc") → "msc", ("B.Tech") → "b tech", ("BE/Btech") → "be btech"
+HIGHEST_DEGREE_PREFERRED_PATTERN_GROUPS = [
+    [r"\bm\s*tech\b"],                  # M.Tech / MTech
+    [r"\bm\s+s\b", r"\bms\b"],         # M.S — \bms\b won't match "msc" (no word boundary after s)
+    [r"\bb\s*tech\b"],                  # B.Tech / Btech (also matches "be btech")
+    [r"\bb\s*e\b", r"\bbe\b"],          # B.E / BE
+]
 
 IMMEDIATE_NOTICE_KEYWORDS = (
     "immediate joiner",
@@ -278,7 +427,55 @@ def is_tech_experience_prompt(text, keywords=None):
     if not normalized:
         return False
     kw = keywords if keywords is not None else TECH_EXPERIENCE_KEYWORDS
-    return any(keyword in normalized for keyword in kw)
+    for keyword in kw:
+        if len(keyword) <= 2:
+            if re.search(rf'\b{re.escape(keyword)}\b', normalized):
+                return True
+        else:
+            if keyword in normalized:
+                return True
+    return False
+
+
+def is_tech_yesno_prompt(text):
+    """Yes/No skill questions: 'do you know X', 'have you used X', etc."""
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    has_phrase = any(phrase in normalized for phrase in TECH_YESNO_PHRASES)
+    if not has_phrase:
+        return False
+    # If the question is asking for a quantity, treat as experience prompt not yes/no
+    has_quantity = any(marker in normalized for marker in EXPERIENCE_QUANTITY_MARKERS)
+    return not has_quantity
+
+
+def is_location_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in LOCATION_KEYWORDS)
+
+
+def is_pan_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in PAN_KEYWORDS)
+
+
+def is_holding_offer_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in HOLDING_OFFER_KEYWORDS)
+
+
+def is_previous_company_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in PREVIOUS_COMPANY_KEYWORDS)
 
 
 def is_disability_prompt(text):
@@ -289,7 +486,7 @@ def is_disability_prompt(text):
 
 
 def preferred_disability_text():
-    return "No disability"
+    return "No"
 
 
 def is_dob_prompt(text):
@@ -360,7 +557,7 @@ def preferred_last_working_day_text():
 
 
 def preferred_notice_period_text():
-    return "15 days or less"
+    return "0"
 
 
 def _estimate_notice_days(value, unit):
@@ -521,4 +718,57 @@ def find_preferred_positive_preference_option(options, label_getter=None):
             if any(marker in normalized for marker in negative_markers):
                 continue
             return option
+    return None
+
+
+def is_interview_availability_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in INTERVIEW_AVAILABILITY_KEYWORDS)
+
+
+def is_conditional_followup_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(normalized.startswith(prefix.strip()) for prefix in CONDITIONAL_FOLLOWUP_PREFIXES)
+
+
+def is_employee_id_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in EMPLOYEE_ID_KEYWORDS)
+
+
+def is_highest_degree_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in HIGHEST_DEGREE_KEYWORDS)
+
+
+def preferred_highest_degree_text():
+    return "M.Tech"
+
+
+def find_preferred_highest_degree_option(options, label_getter=None):
+    label_getter = label_getter or (lambda option: option)
+    for pattern_group in HIGHEST_DEGREE_PREFERRED_PATTERN_GROUPS:
+        for option in options:
+            norm = normalize_text(label_getter(option))
+            if any(re.search(p, norm) for p in pattern_group):
+                return option
+    return None
+
+
+def find_preferred_disability_option(options, label_getter=None):
+    label_getter = label_getter or (lambda option: option)
+    negative_patterns = [r"\bno\b", r"\bnone\b", r"\bnot\b", r"\bdon.?t\b", r"\bwithout\b", r"\bnever\b"]
+    for pattern in negative_patterns:
+        for option in options:
+            norm = normalize_text(label_getter(option))
+            if re.search(pattern, norm) and not re.search(r"\byes\b", norm):
+                return option
     return None

@@ -1,0 +1,85 @@
+[2026-04-25 00:06:40] | answered | Q: Hi Nitesh, companies value diversity and want to build inclusive teams. Share your career status to proceed with this job application. Are you on a career break? | A: [chip] No
+[2026-04-25 00:06:42] | answered | Q: Hi Nitesh, companies value diversity and want to build inclusive teams. Share your disability status to be able to apply to this job. Do you have any kind of disability? | A: [chip] I have a disability
+[2026-04-25 00:06:43] | answered | Q: What kind of disability do you have? | A: [chip] Low Vision
+[2026-04-25 00:06:44] | answered | Q: Please specify your disability percentage. | A: [text] No disability
+[2026-04-25 00:08:37] | answered | Q: Salutation | A: [radio] Mr.
+[2026-04-25 00:08:40] | answered | Q: Date of Birth | A: [text] 11/09/1995
+[2026-04-25 00:08:44] | answered | Q: Notice Period | A: [radio] Can join immediately
+[2026-04-25 00:08:47] | NEW (no override matched) | Q: Highest Degree | A: [radio] BE/Btech
+[2026-04-25 00:08:49] | answered | Q: Ex-employee of Tredence? | A: [radio] No
+[2026-04-25 00:08:52] | NEW (no override matched) | Q: If yes, Employee ID | A: [text] 3
+[2026-04-25 00:08:55] | answered | Q: Terms of use : https://www.tredence.com/terms-of-use Privacy policy: https://www.tredence.com/privacy-policy | A: [chip] Yes
+[2026-04-25 00:08:56] | SKIPPED (no input element found) | Q: Thank you for your responses.
+[2026-04-25 00:35:14] | answered | Q: Are you currently residing in Chennai or willing to relocate to Chennai? | A: [radio] Yes
+[2026-04-25 00:35:17] | answered | Q: Are you available for face to face inperson interview @ Chennai | A: [radio] Skip this question
+[2026-04-25 00:35:31] | answered | Q: How many years of experience do you have in Angular / React / ExtJs? | A: [text] 3.5
+[2026-04-25 00:35:34] | answered | Q: How many years of experience do you have in Java? | A: [text] 3.5
+[2026-04-25 00:35:37] | answered | Q: Are you available to attend one mandatory round of face-to-face interviews? | A: [text] 3.5
+[2026-04-25 00:44:01] | answered | Q: Are you currently living in or ready to relocate to Bengaluru ? | A: [radio] Yes
+[2026-04-25 00:44:04] | answered | Q: What is your current annual salary INR? | A: [text] 1350000
+[2026-04-25 00:44:08] | answered | Q: What is your expected annual CTC in INR ? | A: [text] 2000000
+[2026-04-25 00:44:11] | answered | Q: How many years of experience do you have as Fullstack Developer ? | A: [radio] 3+ years
+[2026-04-25 00:44:37] | answered | Q: What is your notice period? | A: [radio] 15 days or less
+[2026-04-25 00:44:43] | answered | Q: How many years of experience do you have in Python ? | A: [radio] 3-5 years
+[2026-04-25 00:44:46] | answered | Q: How many years of experience do you have as Software Engineer ? | A: [radio] 3-5 years
+[2026-04-25 00:44:49] | answered | Q: How many years of experience do you have in Django ? | A: [radio] 3-5 years
+[2026-04-25 00:46:51] | answered | Q: Are you willing to relocate? | A: [text] Yes
+[2026-04-25 00:46:57] | answered | Q: How many years of experience do you have in Java ? | A: [radio] 3-5 years
+[2026-04-25 00:47:00] | answered | Q: How many years of experience do you have as Java Developer ? | A: [radio] 3-5 years
+[2026-04-25 00:47:03] | answered | Q: How many years of experience do you have in Spring Boot ? | A: [text] 3.5
+[2026-04-25 00:47:06] | answered | Q: How many years of experience do you have in Microservices ? | A: [text] 3.5
+[2026-04-25 00:47:09] | answered | Q: AWS experience | A: [text] 3.5
+[2026-04-25 00:47:28] | answered | Q: What is your current CTC in Lacs per annum? | A: [text] 13.5
+[2026-04-25 00:47:31] | answered | Q: What is your expected CTC in Lacs per annum? | A: [text] 20
+[2026-04-25 00:47:39] | answered | Q: Current Location | A: [text] 3.5
+[2026-04-25 00:47:42] | answered | Q: Total Experience (in years) | A: [text] 3.5
+[2026-04-25 00:47:45] | answered | Q: Relevant Experience in Core Java (in years) and Java Version used (Java 8 or higher)? | A: [text] 3.5
+[2026-04-25 00:47:48] | answered | Q: Years of experience in Collections/DSA? | A: [text] 3.5
+[2026-04-25 00:47:51] | answered | Q: Do you know coding in hasmap, linkedlist, strings? | A: [text] 3.5
+[2026-04-25 00:48:30] | answered | Q: How many years of experience do you have in React.Js? | A: [text] 3.5
+[2026-04-25 00:48:33] | answered | Q: How many years of experience do you have in Postgresql? | A: [text] 3.5
+[2026-04-25 00:48:36] | answered | Q: How many years of experience do you have in Spring Boot? | A: [text] 3.5
+[2026-04-25 00:48:39] | answered | Q: How many years of experience in GCP? | A: [text] 3.5
+[2026-04-25 01:24:03] | answered | Q: Are you currently living in or ready to relocate to Pune ? | A: [radio] Yes
+[2026-04-25 01:24:09] | answered | Q: How many years of experience do you have in Core Java ? | A: [radio] 3-5 years
+[2026-04-25 01:24:12] | answered | Q: How many years of experience do you have as Java Back End Developer ? | A: [radio] 3-5 years
+[2026-04-25 01:24:20] | NEW (no override matched) | Q: Have you previously attended an interview with us? | A: [text] No
+[2026-04-25 01:24:23] | answered | Q: Are you comfortable taking an online test as the first round of evaluation? | A: [text] 3.5
+[2026-04-25 01:24:58] | answered | Q: How many years of experience do you have in Microservices? | A: [text] 3.5
+[2026-04-25 01:25:01] | answered | Q: Are you currently residing in Pune or willing to relocate to Pune? | A: [radio] Yes
+[2026-04-25 01:25:03] | answered | Q: How many years of experience do you have in AI? | A: [text] 3.5
+[2026-04-25 01:25:06] | answered | Q: How many years of experience do you have in Large Language Model? | A: [text] 3.5
+[2026-04-25 01:29:49] | answered | Q: Are you currently living in or ready to relocate to Noida ? | A: [radio] Yes
+[2026-04-25 01:39:00] | answered | Q: How many years of experience do you have in Java Development? | A: [text] 3.5
+[2026-04-25 01:39:03] | answered | Q: Please select the city you are currently residing or willing to relocate to | A: [radio] Greater Noida, Uttar Pradesh
+[2026-04-25 01:39:06] | answered | Q: How many years of experience do you have in Azure cloud?If yes, please mention which Azure related skills you worked . | A: [text] 3.5
+[2026-04-25 01:39:09] | answered | Q: Are you comfortable for face to face interview if required? | A: [radio] Yes
+[2026-04-25 01:39:12] | answered | Q: How many years of experience do you have in Springboot ? | A: [text] 3.5
+[2026-04-25 01:39:15] | NEW (no override matched) | Q: Are you holding any offer or pipeline ? If yes, please provide details. | A: [text] yes
+[2026-04-25 01:39:44] | answered | Q: How many Years of eperience in springboot? | A: [radio] 2-4 Years
+[2026-04-25 01:39:47] | answered | Q: Do you have any experience in monitoring tools Is yes Specify | A: [chip] Skip this question
+[2026-04-25 01:40:48] | answered | Q: Are you currently residing in Bengaluru or willing to relocate to Bengaluru? | A: [radio] Yes
+[2026-04-25 01:41:14] | answered | Q: How many years of experience do you have in Front end? | A: [text] 3.5
+[2026-04-25 01:41:37] | answered | Q: Are you currently residing in Hyderabad or willing to relocate to Hyderabad? | A: [radio] Yes
+[2026-04-25 01:42:49] | NEW (no override matched) | Q: PAN Number is Mandatory | A: [text] 8860053770
+[2026-04-25 01:42:53] | answered | Q: hands-on experience in Nokia Orchestration (NOrC) with strong understanding of end-to-end orchestration workflows. | A: [text] 3.5
+[2026-04-25 01:42:56] | answered | Q: Java (Advanced), JUnit, Spring Boot 2.7.5 | A: [text] 3.5
+[2026-04-25 01:42:59] | answered | Q: BPMN workflows using Camunda | A: [text] 3.5
+[2026-04-25 01:43:08] | answered | Q: What is your notice period? PLz Mentoin the LWD | A: [chip] Skip this question
+[2026-04-25 01:43:09] | NEW (no override matched) | Q: Immediate Joiners Are highly preferable | A: [text] Bengaluru
+[2026-04-25 01:44:09] | answered | Q: have you used Java streams in your recent projects? | A: [radio] Skip this question
+[2026-04-25 01:44:15] | answered | Q: How many years of experience do you have in SQL ? | A: [radio] 3-5 years
+[2026-04-25 01:44:34] | answered | Q: How many years of experience do you have in Product Development? | A: [text] 3.5
+[2026-04-25 01:44:51] | answered | Q: How many years of experience do you have in Oracle Cpq? | A: [text] 3.5
+[2026-04-25 01:44:54] | answered | Q: How many years of experience do you have in Bml? | A: [text] 3.5
+[2026-04-25 01:44:57] | answered | Q: What Was your last working Day (LWD) ? | A: [text] 31/10/2025
+[2026-04-25 01:45:01] | answered | Q: How many years of experience do you have in Front End? | A: [text] 3.5
+[2026-04-25 01:45:49] | answered | Q: How many years of experience do you have in Angular or React | A: [text] 3.5
+[2026-04-25 01:45:52] | answered | Q: How many years of experience do you have in Kafka? | A: [text] 3.5
+[2026-04-25 01:45:56] | answered | Q: How many years of experience do you have in Camunda Bpm? | A: [text] 3.5
+[2026-04-25 01:45:59] | answered | Q: How many years of experience do you have in Spring boot | A: [text] 3.5
+[2026-04-25 01:46:15] | NEW (no override matched) | Q: Your relevant exp | A: [text] 3
+[2026-04-25 01:46:17] | answered | Q: Please share me your pan card number | A: [text] 3.5
+[2026-04-25 01:46:21] | answered | Q: What is your Dob | A: [text] 11/09/1995
+[2026-04-25 01:46:24] | NEW (no override matched) | Q: Are you holding any offers ? If yes please share me the offer | A: [text] Bengaluru
+[2026-04-25 01:46:28] | answered | Q: Earlier have you worked in TCS | A: [text] 3.5

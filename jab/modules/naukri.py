@@ -14,16 +14,27 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
 from .answer_utils import (
     DIRECT_QUESTION_ANSWERS,
+    find_preferred_disability_option,
+    find_preferred_highest_degree_option,
     find_preferred_hybrid_work_model_option,
     find_preferred_notice_option,
     find_preferred_marital_status_option,
     find_preferred_positive_preference_option,
     find_preferred_title_option,
     is_career_break_prompt,
+    is_conditional_followup_prompt,
+    is_holding_offer_prompt,
+    is_interview_availability_prompt,
+    is_location_prompt,
+    is_pan_prompt,
+    is_previous_company_prompt,
+    is_tech_yesno_prompt,
     is_current_ctc_prompt,
     is_disability_prompt,
     is_dob_prompt,
+    is_employee_id_prompt,
     is_expected_ctc_prompt,
+    is_highest_degree_prompt,
     is_hybrid_work_model_prompt,
     is_last_working_day_prompt,
     is_marital_status_prompt,
@@ -38,6 +49,7 @@ from .answer_utils import (
     preferred_disability_text,
     preferred_dob_text,
     preferred_expected_ctc_text,
+    preferred_highest_degree_text,
     preferred_hybrid_work_model_text,
     preferred_last_working_day_text,
     preferred_notice_period_buyout_text,
@@ -386,11 +398,27 @@ class ChatbotAgent:
             return "No"
         if is_disability_prompt(question):
             return preferred_disability_text()
+        if is_interview_availability_prompt(question):
+            return "Yes"
+        if is_location_prompt(question):
+            return self.profile_data.get("Location", "Bengaluru")
+        if is_pan_prompt(question):
+            return self.profile_data.get("PAN", "")
+        if is_holding_offer_prompt(question):
+            return "No"
+        if is_conditional_followup_prompt(question) or is_employee_id_prompt(question):
+            return "NA"
+        if is_highest_degree_prompt(question):
+            return preferred_highest_degree_text()
+        if is_tech_yesno_prompt(question):
+            return "Yes"
         if normalized.startswith("how many years of experience") or normalized.startswith("relevant experience"):
             return "3.5"
         if is_tech_experience_prompt(question, self.tech_keywords):
             return "3.5"
         if self._is_previous_employee_question(question):
+            return "No"
+        if is_previous_company_prompt(question):
             return "No"
         if self.positive_preference_mode and is_positive_preference_prompt(question):
             return preferred_positive_preference_text()
@@ -436,13 +464,28 @@ class ChatbotAgent:
                 if chips:
                     answer_lower = answer.strip().lower()
                     selected_chip = None
-                    for c in chips:
-                        chip_text = (c.inner_text() or "").strip().lower()
-                        if chip_text == answer_lower or chip_text in answer_lower or answer_lower in chip_text:
-                            selected_chip = c
-                            break
+                    chip_labels = [(c, (c.inner_text() or "").strip()) for c in chips]
+                    if is_notice_period_prompt(question):
+                        best = find_preferred_notice_option(
+                            [t for _, t in chip_labels]
+                        )
+                        if best:
+                            selected_chip = next((c for c, t in chip_labels if t == best), None)
+                    elif is_disability_prompt(question):
+                        best = find_preferred_disability_option(
+                            [t for _, t in chip_labels]
+                        )
+                        if best:
+                            selected_chip = next((c for c, t in chip_labels if t == best), None)
                     if not selected_chip:
-                        selected_chip = chips[0]
+                        for c in chips:
+                            chip_text = (c.inner_text() or "").strip().lower()
+                            if chip_text == answer_lower or chip_text in answer_lower or answer_lower in chip_text:
+                                selected_chip = c
+                                break
+                    if not selected_chip:
+                        best_label = self.match_by_sentiment(answer, [t for _, t in chip_labels])[0]
+                        selected_chip = next((c for c, t in chip_labels if t == best_label), chips[0])
                     selected_chip_text = (selected_chip.inner_text() or "").strip()
                     print(f"Chip selected: {selected_chip_text}")
                     self._log_new_question(question, log_reason, f"[chip] {selected_chip_text}")
@@ -474,6 +517,18 @@ class ChatbotAgent:
                         )
                     elif is_hybrid_work_model_prompt(question):
                         selected_option = find_preferred_hybrid_work_model_option(
+                            options, label_getter=lambda option: option["label"]
+                        )
+                    elif is_interview_availability_prompt(question):
+                        selected_option = find_preferred_positive_preference_option(
+                            options, label_getter=lambda option: option["label"]
+                        )
+                    elif is_disability_prompt(question):
+                        selected_option = find_preferred_disability_option(
+                            options, label_getter=lambda option: option["label"]
+                        )
+                    elif is_highest_degree_prompt(question):
+                        selected_option = find_preferred_highest_degree_option(
                             options, label_getter=lambda option: option["label"]
                         )
                     elif self.positive_preference_mode and is_positive_preference_prompt(question):
@@ -621,6 +676,14 @@ class NaukriBot:
                 continue
         return ""
 
+    def _clean_company_name(self, raw):
+        # Take only the first line (AmbitionBox rating appears on subsequent lines)
+        name = (raw or "").split("\n")[0].strip()
+        # Strip trailing rating/review noise like "3.3", "12.5K Reviews", "4.1K Reviews"
+        name = re.sub(r'\s*\d[\d.]*[KkMm]?\s*reviews?.*$', '', name, flags=re.IGNORECASE).strip()
+        name = re.sub(r'\s*\d[\d.]*\s*$', '', name).strip()
+        return name
+
     def _extract_company_name_from_page(self):
         for selector in JOB_COMPANY_SELECTORS:
             try:
@@ -629,7 +692,7 @@ class NaukriBot:
                     node = nodes.nth(i)
                     if not node.is_visible():
                         continue
-                    company_text = (node.inner_text() or "").strip()
+                    company_text = self._clean_company_name(node.inner_text())
                     if company_text:
                         return company_text
             except Exception:
@@ -883,14 +946,15 @@ class NaukriBot:
         filepath = "./external_apply.txt"
         if os.path.exists(filepath):
             with open(filepath, "r", encoding="utf-8") as f:
-                if naukri_url in f.read():
-                    print(f"Already in external_apply.txt, skipping: {job_title} @ {company}")
-                    return
+                existing = f.read()
+            if naukri_url in existing or (apply_url and apply_url != naukri_url and apply_url in existing):
+                print(f"Already in external_apply.txt, skipping: {job_title} @ {company}")
+                return
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         if apply_url and apply_url != naukri_url:
-            entry = f"[{timestamp}] | {job_title} @ {company} | Naukri: {naukri_url} | Apply: {apply_url} |\n"
+            entry = f"[{timestamp}] | Apply: {apply_url} | Naukri: {naukri_url} | {job_title} @ {company} |\n"
         else:
-            entry = f"[{timestamp}] | {job_title} @ {company} | Naukri: {naukri_url} |\n"
+            entry = f"[{timestamp}] | Naukri: {naukri_url} | {job_title} @ {company} |\n"
         with open(filepath, "a", encoding="utf-8") as f:
             f.write(entry)
         print(f"Saved to external_apply.txt: {job_title} @ {company}")
@@ -1100,8 +1164,178 @@ class NaukriBot:
                 continue
         return []
 
-    def _apply_recommended_jobs(self):
-        print("\n--- Applying to Recommended Jobs ---")
+    def _click_recommended_section_tab(self, section_name):
+        """Click a section tab on the Recommended Jobs page. Returns True if clicked."""
+        # Matches "Applies", "Applies (62)", "Profile (38)", etc.
+        exact_pattern = re.compile(rf'^\s*{re.escape(section_name)}\b', re.IGNORECASE)
+
+        # Strategy 1: find within a recognised tab-list container (avoids matching job-card text)
+        container_selectors = [
+            '[role="tablist"]',
+            '[class*="tabList"]', '[class*="tab-list"]',
+            '[class*="sectionTab"]', '[class*="filterTab"]',
+            '[class*="leftSection"]', '[class*="left-section"]',
+            '[class*="sidebar"]',
+        ]
+        for container_sel in container_selectors:
+            try:
+                containers = self.page.locator(container_sel)
+                for i in range(min(containers.count(), 3)):
+                    container = containers.nth(i)
+                    if not container.is_visible():
+                        continue
+                    for tag in ['button', '[role="tab"]', 'li', 'a', 'span', 'div']:
+                        try:
+                            tab = container.locator(tag).filter(has_text=exact_pattern).first
+                            if tab.count() > 0 and tab.is_visible():
+                                tab.click()
+                                self.page.wait_for_timeout(1500)
+                                print(f"Clicked section tab '{section_name}' inside {container_sel}")
+                                return True
+                        except Exception:
+                            continue
+            except Exception:
+                continue
+
+        # Strategy 2: exact-text match on tab-like tags only (not generic span/div)
+        for tag in ['button', '[role="tab"]', 'li[class*="tab"]', 'li[class*="Tab"]']:
+            try:
+                el = self.page.locator(tag).filter(has_text=exact_pattern).first
+                if el.count() > 0 and el.is_visible():
+                    el.click()
+                    self.page.wait_for_timeout(1500)
+                    print(f"Clicked section tab '{section_name}' via {tag}")
+                    return True
+            except Exception:
+                continue
+
+        print(f"Section tab not found: '{section_name}' — skipping section")
+        return False
+
+    def _collect_recommended_cards(self):
+        """Wait for cards to render, scroll to load all, return card metadata list."""
+        for wait_sel in ['article.jobTuple', 'article[data-job-id]', 'p.title']:
+            try:
+                self.page.wait_for_selector(wait_sel, timeout=8000)
+                break
+            except Exception:
+                continue
+        else:
+            time.sleep(3)
+        try:
+            self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            self.page.wait_for_timeout(1200)
+            self.page.evaluate("window.scrollTo(0, 0)")
+            self.page.wait_for_timeout(500)
+        except Exception:
+            pass
+        return self.page.eval_on_selector_all(
+            'article.jobTuple[data-job-id]',
+            '''elements => elements.map(el => ({
+                jobId: el.getAttribute('data-job-id'),
+                title: (el.querySelector('p.title') || {getAttribute: ()=>''}).getAttribute('title')
+                        || (el.querySelector('p.title') || {textContent: ''}).textContent.trim(),
+                company: (el.querySelector('.subTitle') || {getAttribute: ()=>''}).getAttribute('title')
+                         || (el.querySelector('.subTitle') || {textContent: ''}).textContent.trim(),
+                age: ((el.querySelector('.plcHolder .fw500') || el.querySelector('.jobAge') || {textContent: ''}).textContent || '').trim(),
+            }))'''
+        )
+
+    def _apply_card(self, card, rec_page_url, section_name):
+        """Navigate to one recommended job card and apply/save. Returns True if applied."""
+        job_id = card.get('jobId', '')
+        listing_title = card.get('title', '')
+        listing_company = card.get('company', '')
+        age_text = card.get('age', '')
+        if not job_id:
+            return False
+        age_days = self._parse_job_age_days(age_text)
+        max_age = int(self.jobage) if hasattr(self, 'jobage') and self.jobage else 1
+        if age_days > max_age:
+            print(f"Skipping recommended job (age {age_days}d > {max_age}d): {listing_title}")
+            return False
+        try:
+            # Return to recommended page + re-select section if we navigated away
+            if rec_page_url not in self.page.url:
+                self.page.goto(rec_page_url)
+                self.page.wait_for_load_state('networkidle')
+                self._click_recommended_section_tab(section_name)
+                try:
+                    self.page.wait_for_selector(f'article[data-job-id="{job_id}"]', timeout=8000)
+                except Exception:
+                    time.sleep(2)
+
+            self.page.wait_for_timeout(1500)
+            title_el = self.page.locator(f'article[data-job-id="{job_id}"] p.title').first
+            ctx = self.page.context
+            pages_before = set(id(p) for p in ctx.pages)
+            title_el.click()
+            job_url = None
+            for _ in range(20):
+                self.page.wait_for_timeout(200)
+                new_tabs = [p for p in ctx.pages if id(p) not in pages_before]
+                if new_tabs:
+                    new_tab = new_tabs[0]
+                    try:
+                        new_tab.wait_for_load_state('domcontentloaded', timeout=8000)
+                    except Exception:
+                        pass
+                    job_url = new_tab.url
+                    new_tab.close()
+                    break
+            if job_url:
+                self.page.goto(job_url)
+            self.page.wait_for_load_state('networkidle')
+
+            jl = self.page.url
+            page_title = self._extract_job_title_from_page()
+            page_company = self._extract_company_name_from_page()
+            job_title = page_title or listing_title
+            company_name = page_company or listing_company
+
+            if self._is_blocked_company(company_name):
+                print(f"Skipping blocked company ({company_name}): {job_title or jl}")
+                return False
+            job_description = self._extract_job_description()
+            should_apply, reason = self._is_java_job(job_title, job_description)
+            if not should_apply:
+                print(f"Skipping job due to filter ({reason}): {job_title or jl}")
+                return False
+            apply = self.page.query_selector('#apply-button')
+            if not apply:
+                if self._is_already_applied():
+                    print(f"Already applied, skipping: {job_title or jl}")
+                    return False
+                if not re.search(r"\bjava\b", normalize_text(job_description)):
+                    print(f"Skipping external apply (no Java in description): {job_title or jl}")
+                    return False
+                external_url = self._click_and_get_company_apply_url() or jl
+                self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
+                return False
+            if self._is_already_applied():
+                print(f"Already applied, skipping: {job_title or jl}")
+                return False
+            apply.click()
+            try:
+                expect(self.page.locator(".chatbot_MessageContainer")).to_be_visible(timeout=3000)
+                self.cba.classify_new_question()
+                self.applied_count += 1
+                return True
+            except Exception:
+                try:
+                    expect(self.page).to_have_url(self.pattern)
+                    self.applied_count += 1
+                    return True
+                except Exception:
+                    print(f"Skipping job (not applied): {job_title or jl}")
+                    return False
+        except Exception as e:
+            print(f"Error on recommended job {job_id} ({listing_title}): {e}")
+            return False
+
+    def _apply_recommended_jobs(self, sections=None):
+        sections = sections or ["Profile"]
+        print(f"\n--- Applying to Recommended Jobs | sections: {sections} ---")
         try:
             jobs_tab_selectors = [
                 '.nI-gNb-menuItems__anchor:has-text("Jobs")',
@@ -1147,136 +1381,23 @@ class NaukriBot:
             rec_page_url = self.page.url
             print(f"Recommended Jobs page: {rec_page_url}")
 
-            # Wait for job cards to render (p.title inside article.jobTuple)
-            for wait_sel in ['article.jobTuple', 'article[data-job-id]', 'p.title']:
-                try:
-                    self.page.wait_for_selector(wait_sel, timeout=8000)
-                    print(f"Job cards ready ({wait_sel})")
-                    break
-                except Exception:
-                    continue
-            else:
-                print("Job cards did not appear — waiting 3s as fallback")
-                time.sleep(3)
-
-            # Scroll to load all lazy cards
-            try:
-                self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                self.page.wait_for_timeout(1200)
-                self.page.evaluate("window.scrollTo(0, 0)")
-                self.page.wait_for_timeout(500)
-            except Exception:
-                pass
-
-            # Collect job card metadata from data-job-id attributes
-            cards = self.page.eval_on_selector_all(
-                'article.jobTuple[data-job-id]',
-                '''elements => elements.map(el => ({
-                    jobId: el.getAttribute('data-job-id'),
-                    title: (el.querySelector('p.title') || {getAttribute: ()=>''}).getAttribute('title')
-                            || (el.querySelector('p.title') || {textContent: ''}).textContent.trim(),
-                    company: (el.querySelector('.subTitle') || {getAttribute: ()=>''}).getAttribute('title')
-                             || (el.querySelector('.subTitle') || {textContent: ''}).textContent.trim(),
-                    age: ((el.querySelector('.plcHolder .fw500') || el.querySelector('.jobAge') || {textContent: ''}).textContent || '').trim(),
-                }))'''
-            )
-            print(f"Found {len(cards)} recommended job cards")
-
-            for card in cards:
-                self._check_pause()
+            for section_name in sections:
                 if self.applied_count >= self.applno:
-                    print(f"Applied to {self.applied_count} jobs.")
                     break
-                job_id = card.get('jobId', '')
-                listing_title = card.get('title', '')
-                listing_company = card.get('company', '')
-                age_text = card.get('age', '')
-                if not job_id:
+                print(f"\n  -- Section: {section_name} --")
+                # Navigate back to recommended page before clicking each section tab
+                if rec_page_url not in self.page.url:
+                    self.page.goto(rec_page_url)
+                    self.page.wait_for_load_state('networkidle')
+                if not self._click_recommended_section_tab(section_name):
                     continue
-                age_days = self._parse_job_age_days(age_text)
-                max_age = int(self.jobage) if hasattr(self, 'jobage') and self.jobage else 1
-                if age_days > max_age:
-                    print(f"Skipping recommended job (age {age_days}d > {max_age}d): {listing_title}")
-                    continue
-                try:
-                    # Return to recommended page if we navigated away
-                    if rec_page_url not in self.page.url:
-                        self.page.goto(rec_page_url)
-                        self.page.wait_for_load_state('networkidle')
-                        try:
-                            self.page.wait_for_selector(f'article[data-job-id="{job_id}"]', timeout=8000)
-                        except Exception:
-                            time.sleep(2)
-
-                    # Click the title — Naukri opens job in a new tab
-                    self.page.wait_for_timeout(1500)
-                    title_el = self.page.locator(f'article[data-job-id="{job_id}"] p.title').first
-                    ctx = self.page.context
-                    pages_before = set(id(p) for p in ctx.pages)
-                    title_el.click()
-                    # Wait for new tab to appear (up to 4 s)
-                    job_url = None
-                    for _ in range(20):
-                        self.page.wait_for_timeout(200)
-                        new_tabs = [p for p in ctx.pages if id(p) not in pages_before]
-                        if new_tabs:
-                            new_tab = new_tabs[0]
-                            try:
-                                new_tab.wait_for_load_state('domcontentloaded', timeout=8000)
-                            except Exception:
-                                pass
-                            job_url = new_tab.url
-                            new_tab.close()
-                            break
-                    if job_url:
-                        self.page.goto(job_url)
-                        self.page.wait_for_load_state('networkidle')
-                    else:
-                        # Navigated in current page
-                        self.page.wait_for_load_state('networkidle')
-
-                    jl = self.page.url
-                    page_title = self._extract_job_title_from_page()
-                    page_company = self._extract_company_name_from_page()
-                    job_title = page_title or listing_title
-                    company_name = page_company or listing_company
-
-                    if self._is_blocked_company(company_name):
-                        print(f"Skipping blocked company ({company_name}): {job_title or jl}")
-                        continue
-                    job_description = self._extract_job_description()
-                    should_apply, reason = self._is_java_job(job_title, job_description)
-                    if not should_apply:
-                        print(f"Skipping job due to filter ({reason}): {job_title or jl}")
-                        continue
-                    apply = self.page.query_selector('#apply-button')
-                    if not apply:
-                        if self._is_already_applied():
-                            print(f"Already applied, skipping: {job_title or jl}")
-                            continue
-                        if not re.search(r"\bjava\b", normalize_text(job_description)):
-                            print(f"Skipping external apply (no Java in description): {job_title or jl}")
-                            continue
-                        external_url = self._click_and_get_company_apply_url() or jl
-                        self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
-                        continue
-                    if self._is_already_applied():
-                        print(f"Already applied, skipping: {job_title or jl}")
-                        continue
-                    apply.click()
-                    try:
-                        expect(self.page.locator(".chatbot_MessageContainer")).to_be_visible(timeout=3000)
-                        self.cba.classify_new_question()
-                        self.applied_count += 1
-                    except Exception:
-                        try:
-                            expect(self.page).to_have_url(self.pattern)
-                            self.applied_count += 1
-                        except Exception:
-                            print(f"Skipping job (not applied): {job_title or jl}")
-                except Exception as e:
-                    print(f"Error on recommended job {job_id} ({listing_title}): {e}")
-                    continue
+                cards = self._collect_recommended_cards()
+                print(f"Found {len(cards)} cards in section '{section_name}'")
+                for card in cards:
+                    self._check_pause()
+                    if self.applied_count >= self.applno:
+                        break
+                    self._apply_card(card, rec_page_url, section_name)
         except Exception as e:
             print(f"Error during Recommended Jobs step: {e}")
 
@@ -1342,7 +1463,7 @@ class NaukriBot:
                 print(jl, "_______", e)
                 continue
 
-    def filter_apply(self,s,e='',l='',ja='1',max_pages=None):
+    def filter_apply(self,s,e='',l='',ja='1',max_pages=None,recommended_sections=None):
         self.search = s
         if not self.search:
             print("Search keyword required")
@@ -1356,7 +1477,7 @@ class NaukriBot:
         self._start_pause_listener()
         time.sleep(1)
         try:
-            self._apply_recommended_jobs()
+            self._apply_recommended_jobs(sections=recommended_sections)
             max_restarts = 0 if max_pages else 5
             for attempt in range(max_restarts + 1):
                 if attempt > 0:

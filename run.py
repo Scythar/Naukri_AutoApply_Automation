@@ -11,10 +11,14 @@ from jab.modules.naukri import NaukriBot
 EMAIL    = "niteshsingh5375@gmail.com"
 PASSWORD = "nitesh5375"
 SEARCH   = "java developer"
-JOB_AGE  = "1"
+JOB_AGE  = "3"
 MAX_PAGES = 10
 
 EXPERIENCE_PHASES = [3, 4]
+
+# Sections to apply from on the Recommended Jobs page, in order.
+# Available sections: "Profile", "Applies", "Top Candidate", "You might like"
+RECOMMENDED_SECTIONS = ["Applies", "Profile",  "Top Candidate", "You might like"]
 
 total_applied = 0
 
@@ -25,7 +29,7 @@ for exp in EXPERIENCE_PHASES:
 
     bot = NaukriBot(EMAIL, PASSWORD, EMAIL, number=10000)
     try:
-        result = bot.filter_apply(SEARCH, exp, "", JOB_AGE, max_pages=MAX_PAGES)
+        result = bot.filter_apply(SEARCH, exp, "", JOB_AGE, max_pages=MAX_PAGES, recommended_sections=RECOMMENDED_SECTIONS)
         phase_applied = result.get("applied", 0)
         total_applied += phase_applied
         print(f"Phase done — applied this phase: {phase_applied}  |  total so far: {total_applied}")
