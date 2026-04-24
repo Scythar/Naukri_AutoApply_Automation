@@ -1,2 +1,0 @@
-[2026-04-23 12:39:34] | SKIPPED (chip auto-clicked) | Q: What is your expected annual CTC in INR ?
-[2026-04-23 12:39:47] | NEW (no override matched) | Q: Thank you for your responses.

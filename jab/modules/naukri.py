@@ -21,17 +21,22 @@ from .answer_utils import (
     find_preferred_title_option,
     is_career_break_prompt,
     is_current_ctc_prompt,
+    is_disability_prompt,
+    is_dob_prompt,
     is_expected_ctc_prompt,
     is_hybrid_work_model_prompt,
     is_last_working_day_prompt,
     is_marital_status_prompt,
     is_notice_period_buyout_prompt,
     is_notice_period_prompt,
+    is_relocation_prompt,
     is_tech_experience_prompt,
     is_positive_preference_mode_enabled,
     is_positive_preference_prompt,
     is_title_prompt,
     preferred_current_ctc_text,
+    preferred_disability_text,
+    preferred_dob_text,
     preferred_expected_ctc_text,
     preferred_hybrid_work_model_text,
     preferred_last_working_day_text,
@@ -359,10 +364,12 @@ class ChatbotAgent:
             return DIRECT_QUESTION_ANSWERS[normalized]
         if is_notice_period_buyout_prompt(question):
             return preferred_notice_period_buyout_text()
-        if is_notice_period_prompt(question):
-            return preferred_notice_period_text()
         if is_last_working_day_prompt(question):
             return preferred_last_working_day_text()
+        if is_notice_period_prompt(question):
+            return preferred_notice_period_text()
+        if is_relocation_prompt(question):
+            return "Yes"
         if is_current_ctc_prompt(question):
             return preferred_current_ctc_text(question)
         if is_expected_ctc_prompt(question):
@@ -373,12 +380,16 @@ class ChatbotAgent:
             return preferred_marital_status_text()
         if is_hybrid_work_model_prompt(question):
             return preferred_hybrid_work_model_text()
+        if is_dob_prompt(question):
+            return preferred_dob_text()
         if is_career_break_prompt(question):
             return "No"
-        if normalized.startswith("how many years of experience"):
+        if is_disability_prompt(question):
+            return preferred_disability_text()
+        if normalized.startswith("how many years of experience") or normalized.startswith("relevant experience"):
             return "3.5"
         if is_tech_experience_prompt(question, self.tech_keywords):
-            return "Yes"
+            return "3.5"
         if self._is_previous_employee_question(question):
             return "No"
         if self.positive_preference_mode and is_positive_preference_prompt(question):
@@ -386,7 +397,7 @@ class ChatbotAgent:
         self._question_overridden = False
         return answer
 
-    def _log_new_question(self, question, reason):
+    def _log_new_question(self, question, reason, answer=""):
         filepath = "./newQuestions.txt"
         question_clean = " ".join(question.strip().split())
         if os.path.exists(filepath):
@@ -394,7 +405,8 @@ class ChatbotAgent:
                 if question_clean in f.read():
                     return
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        entry = f"[{timestamp}] | {reason} | Q: {question_clean}\n"
+        answer_str = f" | A: {answer}" if answer else ""
+        entry = f"[{timestamp}] | {reason} | Q: {question_clean}{answer_str}\n"
         with open(filepath, "a", encoding="utf-8") as f:
             f.write(entry)
         print(f"Logged to newQuestions.txt [{reason}]: {question_clean[:80]}")
@@ -413,18 +425,28 @@ class ChatbotAgent:
                 answer = self.model.chatbot_response(question)
                 answer = self._override_answer(question, answer)
                 print('answer', answer)
-                if not self._question_overridden:
-                    self._log_new_question(question, "NEW (no override matched)")
+                log_reason = "NEW (no override matched)" if not self._question_overridden else "answered"
 
                 checkboxes = cbcn.query_selector_all('input[type="checkbox"]')
                 radio_buttons = cbcn.query_selector_all('input[type="radio"]')
                 text_input = page.locator('.chatbot_MessageContainer .textArea, .chatbot_MessageContainer input[type="text"], .chatbot_MessageContainer input[type="number"]').first
-                chip = page.query_selector('.chatbot_MessageContainer .chipsContainer .chatbot_Chip')
+                chips = cbcn.query_selector_all('.chipsContainer .chatbot_Chip')
                 suggs = cbcn.query_selector_all('.ssc__heading')
                 dob = cbcn.query_selector(".dob__container")
-                if chip:
-                    self._log_new_question(question, "SKIPPED (chip auto-clicked)")
-                    chip.click()
+                if chips:
+                    answer_lower = answer.strip().lower()
+                    selected_chip = None
+                    for c in chips:
+                        chip_text = (c.inner_text() or "").strip().lower()
+                        if chip_text == answer_lower or chip_text in answer_lower or answer_lower in chip_text:
+                            selected_chip = c
+                            break
+                    if not selected_chip:
+                        selected_chip = chips[0]
+                    selected_chip_text = (selected_chip.inner_text() or "").strip()
+                    print(f"Chip selected: {selected_chip_text}")
+                    self._log_new_question(question, log_reason, f"[chip] {selected_chip_text}")
+                    selected_chip.click()
                     continue
                 elif radio_buttons or checkboxes:
                     _buttons = radio_buttons or checkboxes
@@ -465,15 +487,18 @@ class ChatbotAgent:
                         finnas = next((opt["id"] for opt in options if opt["label"] == best_label), None)
                     if not finnas and not selected_option:
                         finnas = options[0]["id"]
-                    print('FINALANSWER', selected_option["label"] if selected_option else finnas)
                     if not selected_option:
                         selected_option = next((opt for opt in options if opt["id"] == finnas), None)
+                    final_label = selected_option["label"] if selected_option else finnas
+                    print('FINALANSWER', final_label)
+                    self._log_new_question(question, log_reason, f"[radio] {final_label}")
                     if selected_option and selected_option["id"]:
                         page.locator(f'label[for="{selected_option["id"]}"]').click(force=True)
                     else:
                         (selected_option or options[0])["el"].click(force=True)
                 elif text_input.is_visible():
                     print("The new question requires text input.")
+                    self._log_new_question(question, log_reason, f"[text] {answer}")
                     text_input.type(answer,delay=100)
                 elif suggs:
                     print("found suggs")
@@ -492,8 +517,10 @@ class ChatbotAgent:
                     if not finnas:
                         finnas = self.match_by_sentiment(answer,options)[0]
                     print(finnas)
+                    self._log_new_question(question, log_reason, f"[sugg] {finnas}")
                     page.click(f'text="{finnas}"')
                 elif dob:
+                    self._log_new_question(question, log_reason, f"[dob] {answer}")
                     dob = answer.strip().split("/")
                     page.locator("input[name='day']").type(dob[0],delay=100)
                     page.locator("input[name='month']").type(dob[1],delay=100)
@@ -639,6 +666,33 @@ class NaukriBot:
         except Exception:
             return ""
 
+    def _is_already_applied(self):
+        try:
+            page_text = self.page.locator('#apply-button, [class*="apply"]').first.inner_text().strip().lower()
+            if "applied" in page_text:
+                return True
+        except Exception:
+            pass
+        try:
+            indicators = [
+                '[class*="already-applied"]',
+                '[class*="alreadyApplied"]',
+                '[class*="applied-status"]',
+                '[class*="appliedStatus"]',
+            ]
+            for selector in indicators:
+                if self.page.query_selector(selector):
+                    return True
+        except Exception:
+            pass
+        try:
+            body = self.page.locator("body").inner_text().lower()
+            if "already applied" in body or "you have applied" in body:
+                return True
+        except Exception:
+            pass
+        return False
+
     def _title_has_java_backend(self, title):
         lowered_title = " ".join(str(title or "").lower().split())
         return any(re.search(pattern, lowered_title) for pattern in JAVA_TITLE_PATTERNS)
@@ -745,6 +799,7 @@ class NaukriBot:
             return {"status":"failed"}
         
     def _get_company_site_apply_url(self):
+        """Return company-site apply URL by reading href (no navigation)."""
         selectors = [
             'a[href*="applyredirect"]',
             'a:has-text("Apply on Company Site")',
@@ -765,6 +820,65 @@ class NaukriBot:
                 continue
         return None
 
+    def _click_and_get_company_apply_url(self):
+        """Click Apply on Company Site, capture final URL (handles new-tab redirects)."""
+        btn_selectors = [
+            'a[href*="applyredirect"]',
+            'a:has-text("Apply on Company Site")',
+            'a:has-text("Apply on company site")',
+            'a:has-text("company site")',
+            'button:has-text("Apply on Company Site")',
+            '[class*="company-btn"]',
+            '[class*="companyBtn"]',
+        ]
+        for selector in btn_selectors:
+            try:
+                el = self.page.query_selector(selector)
+                if not el:
+                    continue
+                # Prefer static href (no navigation cost)
+                href = el.get_attribute("href") or el.get_attribute("data-href")
+                if href and not href.startswith("javascript"):
+                    return href
+                # Click and watch for new tab
+                ctx = self.page.context
+                pages_before = set(id(p) for p in ctx.pages)
+                el.click()
+                for _ in range(15):
+                    self.page.wait_for_timeout(200)
+                    new_tabs = [p for p in ctx.pages if id(p) not in pages_before]
+                    if new_tabs:
+                        new_tab = new_tabs[0]
+                        try:
+                            new_tab.wait_for_load_state('domcontentloaded', timeout=5000)
+                        except Exception:
+                            pass
+                        company_url = new_tab.url
+                        new_tab.close()
+                        return company_url
+                return None
+            except Exception:
+                continue
+        return None
+
+    def _parse_job_age_days(self, age_text):
+        """Convert '2 Days Ago', '1 Day Ago', 'Just Now', etc. to number of days."""
+        normalized = (age_text or "").lower().strip()
+        if not normalized:
+            return 999
+        if any(k in normalized for k in ("just now", "today", "hour", "minute", "second")):
+            return 0
+        m = re.search(r'(\d+)\s*(day|week|month)', normalized)
+        if m:
+            value = int(m.group(1))
+            unit = m.group(2)
+            if unit == "week":
+                return value * 7
+            if unit == "month":
+                return value * 30
+            return value
+        return 999
+
     def _save_external_apply(self, job_title, company, naukri_url, apply_url):
         filepath = "./external_apply.txt"
         if os.path.exists(filepath):
@@ -773,7 +887,10 @@ class NaukriBot:
                     print(f"Already in external_apply.txt, skipping: {job_title} @ {company}")
                     return
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        entry = f"[{timestamp}] | {job_title} @ {company} | Naukri: {naukri_url} | Apply: {apply_url}\n"
+        if apply_url and apply_url != naukri_url:
+            entry = f"[{timestamp}] | {job_title} @ {company} | Naukri: {naukri_url} | Apply: {apply_url} |\n"
+        else:
+            entry = f"[{timestamp}] | {job_title} @ {company} | Naukri: {naukri_url} |\n"
         with open(filepath, "a", encoding="utf-8") as f:
             f.write(entry)
         print(f"Saved to external_apply.txt: {job_title} @ {company}")
@@ -825,13 +942,19 @@ class NaukriBot:
                     continue
                 apply = self.page.query_selector('#apply-button')
                 if not apply:
+                    if self._is_already_applied():
+                        print(f"Already applied, skipping: {job_title or jl}")
+                        continue
                     if not re.search(r"\bjava\b", normalize_text(job_description)):
                         print(f"Skipping external apply (no Java in description): {job_title or jl}")
                         continue
-                    external_url = self._get_company_site_apply_url() or jl
+                    external_url = self._click_and_get_company_apply_url() or jl
                     self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
                     continue
 
+                if self._is_already_applied():
+                    print(f"Already applied, skipping: {job_title or jl}")
+                    continue
                 apply.click()
                 try:
                     expect(self.page.locator(".chatbot_MessageContainer")).to_be_visible(timeout=3000)
@@ -864,6 +987,361 @@ class NaukriBot:
             print(f'going to page {self.page_no}')
             self.apply_()
 
+    def _extract_job_links_from_page(self):
+        """Try multiple selector strategies to collect job links from the current page."""
+        strategies = [
+            # Search results page: anchors with class "title"
+            (
+                '.title',
+                '''elements => elements
+                    .map(el => ({
+                        href: el.getAttribute('href'),
+                        title: (el.textContent || '').trim(),
+                        company: (
+                            (el.closest('article') || el.closest('div') || el.parentElement)
+                            ?.querySelector('[class*="comp-name"], .comp-name')?.textContent || ''
+                        ).trim(),
+                    }))
+                    .filter(i => i.href)''',
+            ),
+            # Card-based pages (recommended jobs): pick the job-title anchor from each card
+            (
+                '[class*="tuple"], [class*="jobCard"], [class*="job-card"], article',
+                '''elements => {
+                    const seen = new Set();
+                    const NON_JOB = ['/company', '/companies', 'ambitionbox', '/reviews', '/salaries', '/interviews', 'mailto:', 'javascript:'];
+                    function isNonJob(href) {
+                        return NON_JOB.some(p => href.includes(p));
+                    }
+                    return elements.map(el => {
+                        const anchors = [...el.querySelectorAll('a[href]')];
+                        let ta = null;
+                        // 1. anchor with "title" in className
+                        ta = anchors.find(a => /title/i.test(a.className || ''));
+                        // 2. anchor whose href looks like a job detail URL
+                        if (!ta) {
+                            ta = anchors.find(a => {
+                                const h = a.getAttribute('href') || '';
+                                return !isNonJob(h) && (
+                                    h.includes('/job-listings') ||
+                                    /-JD-/i.test(h) ||
+                                    /\\/[a-z][a-z0-9-]+-\\d{6,}/.test(h)
+                                );
+                            });
+                        }
+                        // 3. anchor with most text that is not a rating/short label
+                        if (!ta) {
+                            const candidates = anchors.filter(a => {
+                                const h = a.getAttribute('href') || '';
+                                const txt = (a.textContent || '').trim();
+                                return !isNonJob(h) && txt.length > 5 && !/^\\d/.test(txt);
+                            });
+                            candidates.sort((a, b) => (b.textContent||'').length - (a.textContent||'').length);
+                            ta = candidates[0] || null;
+                        }
+                        if (!ta) return null;
+                        const h = ta.getAttribute('href');
+                        if (!h || seen.has(h)) return null;
+                        seen.add(h);
+                        const comp = el.querySelector('[class*="comp"], [class*="company"]');
+                        return {
+                            href: h,
+                            title: (ta.textContent || '').trim(),
+                            company: (comp ? comp.textContent : '').trim(),
+                        };
+                    }).filter(Boolean);
+                }''',
+            ),
+            # Anchor whose class contains "title"
+            (
+                'a[class*="title"]',
+                '''elements => elements
+                    .map(el => ({
+                        href: el.getAttribute('href'),
+                        title: (el.textContent || '').trim(),
+                        company: (
+                            (el.closest('article') || el.closest('li') || el.closest('div'))
+                            ?.querySelector('[class*="comp-name"], [class*="company"], .comp-name')?.textContent || ''
+                        ).trim(),
+                    }))
+                    .filter(i => i.href)''',
+            ),
+            # Broad URL-pattern fallback: /job-listings or -JD-
+            (
+                'a[href]',
+                '''elements => {
+                    const seen = new Set();
+                    return elements
+                        .filter(el => {
+                            const h = el.getAttribute('href') || '';
+                            return h.includes('/job-listings') || /-JD-[A-Z0-9]/i.test(h);
+                        })
+                        .filter(el => {
+                            const h = el.getAttribute('href');
+                            if (seen.has(h)) return false;
+                            seen.add(h);
+                            return true;
+                        })
+                        .map(el => ({
+                            href: el.getAttribute('href'),
+                            title: (el.textContent || '').trim(),
+                            company: '',
+                        }));
+                }''',
+            ),
+        ]
+        for selector, script in strategies:
+            try:
+                links = self.page.eval_on_selector_all(selector, script)
+                if links:
+                    print(f"Found {len(links)} job links via selector: {selector}")
+                    return links
+            except Exception:
+                continue
+        return []
+
+    def _apply_recommended_jobs(self):
+        print("\n--- Applying to Recommended Jobs ---")
+        try:
+            jobs_tab_selectors = [
+                '.nI-gNb-menuItems__anchor:has-text("Jobs")',
+                'a.nI-gNb-menuItems__anchor:has-text("Jobs")',
+                '.nI-gNb-header a:has-text("Jobs")',
+                'nav a:has-text("Jobs")',
+            ]
+            hovered = False
+            for selector in jobs_tab_selectors:
+                try:
+                    el = self.page.locator(selector).first
+                    if el.count() > 0 and el.is_visible():
+                        el.hover()
+                        hovered = True
+                        print(f"Hovered Jobs tab via: {selector}")
+                        break
+                except Exception:
+                    continue
+            if not hovered:
+                print("Could not hover over Jobs tab — skipping Recommended Jobs step.")
+                return
+            time.sleep(0.6)
+            rec_selectors = [
+                'a:has-text("Recommended Jobs")',
+                '.nI-gNb-menuItems__anchorDropdown:has-text("Recommended")',
+                'a[href*="recommended"]',
+            ]
+            clicked = False
+            for selector in rec_selectors:
+                try:
+                    el = self.page.locator(selector).first
+                    if el.is_visible():
+                        el.click()
+                        clicked = True
+                        print(f"Clicked Recommended Jobs via: {selector}")
+                        break
+                except Exception:
+                    continue
+            if not clicked:
+                print("Could not click Recommended Jobs — skipping.")
+                return
+            self.page.wait_for_load_state('networkidle')
+            rec_page_url = self.page.url
+            print(f"Recommended Jobs page: {rec_page_url}")
+
+            # Wait for job cards to render (p.title inside article.jobTuple)
+            for wait_sel in ['article.jobTuple', 'article[data-job-id]', 'p.title']:
+                try:
+                    self.page.wait_for_selector(wait_sel, timeout=8000)
+                    print(f"Job cards ready ({wait_sel})")
+                    break
+                except Exception:
+                    continue
+            else:
+                print("Job cards did not appear — waiting 3s as fallback")
+                time.sleep(3)
+
+            # Scroll to load all lazy cards
+            try:
+                self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                self.page.wait_for_timeout(1200)
+                self.page.evaluate("window.scrollTo(0, 0)")
+                self.page.wait_for_timeout(500)
+            except Exception:
+                pass
+
+            # Collect job card metadata from data-job-id attributes
+            cards = self.page.eval_on_selector_all(
+                'article.jobTuple[data-job-id]',
+                '''elements => elements.map(el => ({
+                    jobId: el.getAttribute('data-job-id'),
+                    title: (el.querySelector('p.title') || {getAttribute: ()=>''}).getAttribute('title')
+                            || (el.querySelector('p.title') || {textContent: ''}).textContent.trim(),
+                    company: (el.querySelector('.subTitle') || {getAttribute: ()=>''}).getAttribute('title')
+                             || (el.querySelector('.subTitle') || {textContent: ''}).textContent.trim(),
+                    age: ((el.querySelector('.plcHolder .fw500') || el.querySelector('.jobAge') || {textContent: ''}).textContent || '').trim(),
+                }))'''
+            )
+            print(f"Found {len(cards)} recommended job cards")
+
+            for card in cards:
+                self._check_pause()
+                if self.applied_count >= self.applno:
+                    print(f"Applied to {self.applied_count} jobs.")
+                    break
+                job_id = card.get('jobId', '')
+                listing_title = card.get('title', '')
+                listing_company = card.get('company', '')
+                age_text = card.get('age', '')
+                if not job_id:
+                    continue
+                age_days = self._parse_job_age_days(age_text)
+                max_age = int(self.jobage) if hasattr(self, 'jobage') and self.jobage else 1
+                if age_days > max_age:
+                    print(f"Skipping recommended job (age {age_days}d > {max_age}d): {listing_title}")
+                    continue
+                try:
+                    # Return to recommended page if we navigated away
+                    if rec_page_url not in self.page.url:
+                        self.page.goto(rec_page_url)
+                        self.page.wait_for_load_state('networkidle')
+                        try:
+                            self.page.wait_for_selector(f'article[data-job-id="{job_id}"]', timeout=8000)
+                        except Exception:
+                            time.sleep(2)
+
+                    # Click the title — Naukri opens job in a new tab
+                    self.page.wait_for_timeout(1500)
+                    title_el = self.page.locator(f'article[data-job-id="{job_id}"] p.title').first
+                    ctx = self.page.context
+                    pages_before = set(id(p) for p in ctx.pages)
+                    title_el.click()
+                    # Wait for new tab to appear (up to 4 s)
+                    job_url = None
+                    for _ in range(20):
+                        self.page.wait_for_timeout(200)
+                        new_tabs = [p for p in ctx.pages if id(p) not in pages_before]
+                        if new_tabs:
+                            new_tab = new_tabs[0]
+                            try:
+                                new_tab.wait_for_load_state('domcontentloaded', timeout=8000)
+                            except Exception:
+                                pass
+                            job_url = new_tab.url
+                            new_tab.close()
+                            break
+                    if job_url:
+                        self.page.goto(job_url)
+                        self.page.wait_for_load_state('networkidle')
+                    else:
+                        # Navigated in current page
+                        self.page.wait_for_load_state('networkidle')
+
+                    jl = self.page.url
+                    page_title = self._extract_job_title_from_page()
+                    page_company = self._extract_company_name_from_page()
+                    job_title = page_title or listing_title
+                    company_name = page_company or listing_company
+
+                    if self._is_blocked_company(company_name):
+                        print(f"Skipping blocked company ({company_name}): {job_title or jl}")
+                        continue
+                    job_description = self._extract_job_description()
+                    should_apply, reason = self._is_java_job(job_title, job_description)
+                    if not should_apply:
+                        print(f"Skipping job due to filter ({reason}): {job_title or jl}")
+                        continue
+                    apply = self.page.query_selector('#apply-button')
+                    if not apply:
+                        if self._is_already_applied():
+                            print(f"Already applied, skipping: {job_title or jl}")
+                            continue
+                        if not re.search(r"\bjava\b", normalize_text(job_description)):
+                            print(f"Skipping external apply (no Java in description): {job_title or jl}")
+                            continue
+                        external_url = self._click_and_get_company_apply_url() or jl
+                        self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
+                        continue
+                    if self._is_already_applied():
+                        print(f"Already applied, skipping: {job_title or jl}")
+                        continue
+                    apply.click()
+                    try:
+                        expect(self.page.locator(".chatbot_MessageContainer")).to_be_visible(timeout=3000)
+                        self.cba.classify_new_question()
+                        self.applied_count += 1
+                    except Exception:
+                        try:
+                            expect(self.page).to_have_url(self.pattern)
+                            self.applied_count += 1
+                        except Exception:
+                            print(f"Skipping job (not applied): {job_title or jl}")
+                except Exception as e:
+                    print(f"Error on recommended job {job_id} ({listing_title}): {e}")
+                    continue
+        except Exception as e:
+            print(f"Error during Recommended Jobs step: {e}")
+
+    def _apply_jobs_from_current_page(self):
+        """Apply to all jobs listed on the current page using extracted job links."""
+        self.page.wait_for_load_state('networkidle')
+        job_links = self._extract_job_links_from_page()
+        if not job_links:
+            print("No job links found on this page.")
+            return
+
+        for job in job_links:
+            self._check_pause()
+            if self.applied_count >= self.applno:
+                print(f"Applied to {self.applied_count} jobs.")
+                break
+            try:
+                jl = job["href"]
+                listing_title = (job.get("title") or "").strip()
+                listing_company = (job.get("company") or "").strip()
+                self.page.wait_for_timeout(2000)
+                self.page.goto(jl)
+                self.page.wait_for_load_state('networkidle')
+                page_title = self._extract_job_title_from_page()
+                page_company = self._extract_company_name_from_page()
+                job_title = page_title or listing_title
+                company_name = page_company or listing_company
+                if self._is_blocked_company(company_name):
+                    print(f"Skipping blocked company ({company_name}): {job_title or jl}")
+                    continue
+                job_description = self._extract_job_description()
+                should_apply, reason = self._is_java_job(job_title, job_description)
+                if not should_apply:
+                    print(f"Skipping job due to filter ({reason}): {job_title or jl}")
+                    continue
+                apply = self.page.query_selector('#apply-button')
+                if not apply:
+                    if self._is_already_applied():
+                        print(f"Already applied, skipping: {job_title or jl}")
+                        continue
+                    if not re.search(r"\bjava\b", normalize_text(job_description)):
+                        print(f"Skipping external apply (no Java in description): {job_title or jl}")
+                        continue
+                    external_url = self._click_and_get_company_apply_url() or jl
+                    self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
+                    continue
+                if self._is_already_applied():
+                    print(f"Already applied, skipping: {job_title or jl}")
+                    continue
+                apply.click()
+                try:
+                    expect(self.page.locator(".chatbot_MessageContainer")).to_be_visible(timeout=3000)
+                    self.cba.classify_new_question()
+                    self.applied_count += 1
+                except Exception:
+                    try:
+                        expect(self.page).to_have_url(self.pattern)
+                        self.applied_count += 1
+                    except Exception:
+                        print(f"Skipping job (not applied): {job_title or jl}")
+                        continue
+            except Exception as e:
+                print(jl, "_______", e)
+                continue
+
     def filter_apply(self,s,e='',l='',ja='1',max_pages=None):
         self.search = s
         if not self.search:
@@ -878,6 +1356,7 @@ class NaukriBot:
         self._start_pause_listener()
         time.sleep(1)
         try:
+            self._apply_recommended_jobs()
             max_restarts = 0 if max_pages else 5
             for attempt in range(max_restarts + 1):
                 if attempt > 0:

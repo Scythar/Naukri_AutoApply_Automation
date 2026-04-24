@@ -118,6 +118,34 @@ TECH_EXPERIENCE_KEYWORDS = (
     "jpa",
 )
 
+DISABILITY_KEYWORDS = (
+    "disability",
+    "disabled",
+    "differently abled",
+    "special needs",
+    "physically challenged",
+    "kind of disability",
+    "type of disability",
+    "do you have any disability",
+    "person with disability",
+)
+
+DOB_KEYWORDS = (
+    "date of birth",
+    "birth date",
+    "dob",
+    "date of birth dd",
+    "date of birth mm",
+)
+
+RELOCATION_KEYWORDS = (
+    "relocate",
+    "relocation",
+    "willing to move",
+    "move to",
+    "shift to another",
+)
+
 LAST_WORKING_DAY_KEYWORDS = (
     "last working day",
     "expected last working day",
@@ -251,6 +279,35 @@ def is_tech_experience_prompt(text, keywords=None):
         return False
     kw = keywords if keywords is not None else TECH_EXPERIENCE_KEYWORDS
     return any(keyword in normalized for keyword in kw)
+
+
+def is_disability_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in DISABILITY_KEYWORDS)
+
+
+def preferred_disability_text():
+    return "No disability"
+
+
+def is_dob_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in DOB_KEYWORDS)
+
+
+def preferred_dob_text():
+    return "11/09/1995"
+
+
+def is_relocation_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in RELOCATION_KEYWORDS)
 
 
 def is_last_working_day_prompt(text):
