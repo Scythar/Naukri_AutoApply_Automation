@@ -811,10 +811,33 @@ class NaukriBot:
 
         return True, "matches Java job filters"
 
+    def _wait_for_page_ready(self, timeout=15000):
+        """Wait for page load without blocking on networkidle (Naukri keeps background requests open)."""
+        try:
+            self.page.wait_for_load_state('load', timeout=timeout)
+        except Exception:
+            pass
+        self.page.wait_for_timeout(500)
+
     def init_browser(self):
         self._playwright = sync_playwright().start()
-        args = ["--disable-blink-features=AutomationControlled"]
-        self.browser = self._playwright.chromium.launch(headless=False, args=args)
+        args = [
+            "--disable-blink-features=AutomationControlled",
+            "--disable-notifications",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--no-first-run",
+            "--no-default-browser-check",
+        ]
+        try:
+            # Use installed Chrome — matches your other project's behaviour, no taskbar blinking
+            self.browser = self._playwright.chromium.launch(
+                headless=False, channel="chrome", args=args
+            )
+        except Exception:
+            # Fallback to bundled Chromium if Chrome is not installed
+            self.browser = self._playwright.chromium.launch(headless=False, args=args)
         self.page = self.browser.new_page()
         self.cba = ChatbotAgent(self.page, self.username)
 
@@ -884,7 +907,7 @@ class NaukriBot:
         return None
 
     def _click_and_get_company_apply_url(self):
-        """Click Apply on Company Site, capture final URL (handles new-tab redirects)."""
+        """Click Apply on Company Site, navigate in same tab, return final URL."""
         btn_selectors = [
             'a[href*="applyredirect"]',
             'a:has-text("Apply on Company Site")',
@@ -899,27 +922,21 @@ class NaukriBot:
                 el = self.page.query_selector(selector)
                 if not el:
                     continue
-                # Prefer static href (no navigation cost)
+                # Prefer static href (fastest, no navigation)
                 href = el.get_attribute("href") or el.get_attribute("data-href")
                 if href and not href.startswith("javascript"):
                     return href
-                # Click and watch for new tab
-                ctx = self.page.context
-                pages_before = set(id(p) for p in ctx.pages)
+                # Force same-tab navigation to avoid new-tab taskbar flash
+                try:
+                    self.page.evaluate(
+                        "window.open = (url) => { window.location.href = url; return window; };"
+                        "document.querySelectorAll('a[target=\"_blank\"]').forEach(a => a.target = '_self');"
+                    )
+                except Exception:
+                    pass
                 el.click()
-                for _ in range(15):
-                    self.page.wait_for_timeout(200)
-                    new_tabs = [p for p in ctx.pages if id(p) not in pages_before]
-                    if new_tabs:
-                        new_tab = new_tabs[0]
-                        try:
-                            new_tab.wait_for_load_state('domcontentloaded', timeout=5000)
-                        except Exception:
-                            pass
-                        company_url = new_tab.url
-                        new_tab.close()
-                        return company_url
-                return None
+                self._wait_for_page_ready()
+                return self.page.url
             except Exception:
                 continue
         return None
@@ -1166,16 +1183,16 @@ class NaukriBot:
 
     def _click_recommended_section_tab(self, section_name):
         """Click a section tab on the Recommended Jobs page. Returns True if clicked."""
-        # Matches "Applies", "Applies (62)", "Profile (38)", etc.
-        exact_pattern = re.compile(rf'^\s*{re.escape(section_name)}\b', re.IGNORECASE)
+        # Give React time to render the tab list
+        self.page.wait_for_timeout(2000)
 
-        # Strategy 1: find within a recognised tab-list container (avoids matching job-card text)
+        # Strategy 1: scoped inside a known tab-container (avoids matching job-card text)
         container_selectors = [
             '[role="tablist"]',
             '[class*="tabList"]', '[class*="tab-list"]',
             '[class*="sectionTab"]', '[class*="filterTab"]',
             '[class*="leftSection"]', '[class*="left-section"]',
-            '[class*="sidebar"]',
+            '[class*="sidebar"]', '[class*="leftPanel"]',
         ]
         for container_sel in container_selectors:
             try:
@@ -1186,25 +1203,32 @@ class NaukriBot:
                         continue
                     for tag in ['button', '[role="tab"]', 'li', 'a', 'span', 'div']:
                         try:
-                            tab = container.locator(tag).filter(has_text=exact_pattern).first
+                            tab = container.locator(f'{tag}:has-text("{section_name}")').first
                             if tab.count() > 0 and tab.is_visible():
                                 tab.click()
                                 self.page.wait_for_timeout(1500)
-                                print(f"Clicked section tab '{section_name}' inside {container_sel}")
+                                print(f"Clicked section tab '{section_name}' inside {container_sel}/{tag}")
                                 return True
                         except Exception:
                             continue
             except Exception:
                 continue
 
-        # Strategy 2: exact-text match on tab-like tags only (not generic span/div)
-        for tag in ['button', '[role="tab"]', 'li[class*="tab"]', 'li[class*="Tab"]']:
+        # Strategy 2: tab-specific tags page-wide (less likely to hit job cards)
+        for selector in [
+            f'[role="tab"]:has-text("{section_name}")',
+            f'button:has-text("{section_name}")',
+            f'li[class*="tab"]:has-text("{section_name}")',
+            f'li[class*="Tab"]:has-text("{section_name}")',
+            f'li[class*="filter"]:has-text("{section_name}")',
+            f'li[class*="section"]:has-text("{section_name}")',
+        ]:
             try:
-                el = self.page.locator(tag).filter(has_text=exact_pattern).first
+                el = self.page.locator(selector).first
                 if el.count() > 0 and el.is_visible():
                     el.click()
                     self.page.wait_for_timeout(1500)
-                    print(f"Clicked section tab '{section_name}' via {tag}")
+                    print(f"Clicked section tab '{section_name}' via {selector}")
                     return True
             except Exception:
                 continue
@@ -1258,7 +1282,7 @@ class NaukriBot:
             # Return to recommended page + re-select section if we navigated away
             if rec_page_url not in self.page.url:
                 self.page.goto(rec_page_url)
-                self.page.wait_for_load_state('networkidle')
+                self._wait_for_page_ready()
                 self._click_recommended_section_tab(section_name)
                 try:
                     self.page.wait_for_selector(f'article[data-job-id="{job_id}"]', timeout=8000)
@@ -1267,25 +1291,16 @@ class NaukriBot:
 
             self.page.wait_for_timeout(1500)
             title_el = self.page.locator(f'article[data-job-id="{job_id}"] p.title').first
-            ctx = self.page.context
-            pages_before = set(id(p) for p in ctx.pages)
+            # Force same-tab navigation — prevents new-tab taskbar flash
+            try:
+                self.page.evaluate(
+                    "window.open = (url) => { window.location.href = url; return window; };"
+                    "document.querySelectorAll('a[target=\"_blank\"]').forEach(a => a.target = '_self');"
+                )
+            except Exception:
+                pass
             title_el.click()
-            job_url = None
-            for _ in range(20):
-                self.page.wait_for_timeout(200)
-                new_tabs = [p for p in ctx.pages if id(p) not in pages_before]
-                if new_tabs:
-                    new_tab = new_tabs[0]
-                    try:
-                        new_tab.wait_for_load_state('domcontentloaded', timeout=8000)
-                    except Exception:
-                        pass
-                    job_url = new_tab.url
-                    new_tab.close()
-                    break
-            if job_url:
-                self.page.goto(job_url)
-            self.page.wait_for_load_state('networkidle')
+            self._wait_for_page_ready()
 
             jl = self.page.url
             page_title = self._extract_job_title_from_page()
@@ -1377,7 +1392,8 @@ class NaukriBot:
             if not clicked:
                 print("Could not click Recommended Jobs — skipping.")
                 return
-            self.page.wait_for_load_state('networkidle')
+            self._wait_for_page_ready()
+            self.page.wait_for_timeout(2000)
             rec_page_url = self.page.url
             print(f"Recommended Jobs page: {rec_page_url}")
 
@@ -1388,7 +1404,7 @@ class NaukriBot:
                 # Navigate back to recommended page before clicking each section tab
                 if rec_page_url not in self.page.url:
                     self.page.goto(rec_page_url)
-                    self.page.wait_for_load_state('networkidle')
+                    self._wait_for_page_ready()
                 if not self._click_recommended_section_tab(section_name):
                     continue
                 cards = self._collect_recommended_cards()

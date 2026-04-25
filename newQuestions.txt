@@ -83,3 +83,5 @@
 [2026-04-25 01:46:21] | answered | Q: What is your Dob | A: [text] 11/09/1995
 [2026-04-25 01:46:24] | NEW (no override matched) | Q: Are you holding any offers ? If yes please share me the offer | A: [text] Bengaluru
 [2026-04-25 01:46:28] | answered | Q: Earlier have you worked in TCS | A: [text] 3.5
+[2026-04-25 11:40:36] | answered | Q: How many years of experience do you have in Node.Js? | A: [text] 3.5
+[2026-04-25 11:40:39] | answered | Q: How many years of experience do you have in Kubernetes? | A: [text] 3.5
