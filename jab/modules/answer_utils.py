@@ -17,6 +17,10 @@ NOTICE_PERIOD_KEYWORDS = (
     "how soon can you start",
     "how soon can you join",
     "joining availability",
+    "can you join",
+    "can you start",
+    "join immediately",
+    "start immediately",
 )
 
 CAREER_BREAK_KEYWORDS = (
@@ -75,10 +79,18 @@ POSITIVE_PREFERENCE_TOPICS = (
     "weekends",
     "work model",
     "work arrangement",
+    "contractual",
+    "contract basis",
+    "usd",
+    "part time",
+    "part-time",
+    "hourly",
+    "hourly basis",
 )
 
 CURRENT_CTC_KEYWORDS = (
     "current ctc",
+    "currect ctc",   # typo variant
     "current salary",
     "present ctc",
     "present salary",
@@ -86,6 +98,7 @@ CURRENT_CTC_KEYWORDS = (
     "existing ctc",
     "current annual",
     "current package",
+    "currect salary",  # typo variant
 )
 
 EXPECTED_CTC_KEYWORDS = (
@@ -107,14 +120,29 @@ DIRECT_QUESTION_ANSWERS = {
     "are you available to attend one mandatory round of face-to-face interviews": "Yes",
     "relevant experience in core java (in years) and java version used (java 8 or higher)?": "3.5 years Java 17",
     "relevant experience in core java (in years) and java version used (java 8 or higher)": "3.5 years Java 17",
-    "what is your expected annual ctc in inr": "2000000",
-    "what is your expected annual ctc in inr ?": "2000000",
-    "what is your expected ctc in lacs per annum": "20",
-    "what is your expected ctc in lacs per annum ?": "20",
-    "what is your current annual ctc in inr": "1350000",
-    "what is your current annual ctc in inr ?": "1350000",
-    "what is your current ctc in lacs per annum": "13.5",
-    "what is your current ctc in lacs per annum ?": "13.5",
+    "what is your expected annual ctc in inr": "1800000",
+    "what is your expected annual ctc in inr ?": "1800000",
+    "what is your expected ctc in lacs per annum": "18",
+    "what is your expected ctc in lacs per annum ?": "18",
+    "what is your current annual ctc in inr": "1400000",
+    "what is your current annual ctc in inr ?": "1400000",
+    "what is your current ctc in lacs per annum": "14",
+    "what is your current ctc in lacs per annum ?": "14",
+    "do you have pf for all the companies worked?": "Yes UAN NO - 101848140497",
+    "do you have pf for all the companies worked": "Yes UAN NO - 101848140497",
+    "variable pay (numeric input only)": "0",
+    "variable pay (numeric input only)?": "0",
+    "variable pay": "0",
+    "how many hours per week are you available to work": "40",
+    "how many hours per week are you available to work?": "40",
+    "how many hours per week can you work": "40",
+    "how many hours per week can you work?": "40",
+    "how many years of experience do you have in java and mention java version": "3.5 years, Java 17",
+    "how many years of experience do you have in java and mention java version?": "3.5 years, Java 17",
+    "reason for job change": "Better growth opportunities and learning exposure",
+    "reason for job change?": "Better growth opportunities and learning exposure",
+    "reason for change": "Better growth opportunities and learning exposure",
+    "reason for change?": "Better growth opportunities and learning exposure",
 }
 
 TECH_EXPERIENCE_KEYWORDS = (
@@ -152,13 +180,16 @@ RELOCATION_KEYWORDS = (
 
 LAST_WORKING_DAY_KEYWORDS = (
     "last working day",
+    "last working date",
     "expected last working day",
+    "expected last working date",
     "last day of work",
     "last date of employment",
     "relieving date",
     "expected relieving date",
     "last date in",
     "last date at",
+    "select last working",
 )
 
 POSITIVE_PREFERENCE_BLOCKERS = (
@@ -227,12 +258,18 @@ LOCATION_KEYWORDS = (
     "where are you based",
     "base location",
     "current base",
+    "current loaction",   # common typo
+    "your loaction",      # common typo
+    "loaction",           # common typo
 )
 
 PAN_KEYWORDS = (
     "pan number",
     "pan card",
     "pan no",
+    "pancard",
+    "pancard number",
+    "share pancard",
     "permanent account number",
     "share your pan",
     "your pan",
@@ -271,6 +308,12 @@ TECH_YESNO_PHRASES = (
     "have you used java",
     "have you experience",
     "do you have hands",
+    "are you majorly",
+    "are you primarily",
+    "are you mainly",
+    "majorly working in",
+    "primarily working in",
+    "mainly working in",
 )
 
 # If these appear alongside a tech keyword, it's a quantity question not yes/no
@@ -301,6 +344,57 @@ PREVIOUS_COMPANY_KEYWORDS = (
     "former employee",
     "have you worked in",
     "have you worked at",
+    "have you worked with us",
+    "worked with us before",
+    "have you worked with",
+    "worked here before",
+)
+
+CURRENT_COMPANY_KEYWORDS = (
+    "in which company are you currently",
+    "which company are you currently",
+    "which company are you working",
+    "currently employed at",
+    "currently employed in",
+    "where are you currently working",
+    "your current organization",
+    "your current organisation",
+    "your current company",
+    "current employer",
+    "name of your current company",
+    "current company name",
+    "company you are currently working",
+)
+
+JD_RATING_KEYWORDS = (
+    "rate yourself",
+    "rating on",
+    "rate on",
+    "scale of 1 to 10",
+    "scale of 10",
+    "self rating",
+    "self-rating",
+    "rate yourself on",
+    "how do you rate",
+    "your rating as per",
+    "rate yourself as per jd",
+    "rate as per jd",
+)
+
+YYMM_FORMAT_KEYWORDS = (
+    "in yy mm",
+    "yy mm format",
+    "format yy mm",
+    "yymm",
+)
+
+EMAIL_KEYWORDS = (
+    "mail id",
+    "email id",
+    "email address",
+    "your email",
+    "e mail",
+    "mail address",
 )
 
 CONDITIONAL_FOLLOWUP_PREFIXES = (
@@ -316,6 +410,47 @@ EMPLOYEE_ID_KEYWORDS = (
     "employee number",
     "emp id",
     "staff id",
+)
+
+RELATIVE_AT_COMPANY_KEYWORDS = (
+    "relative working",
+    "relative employed",
+    "relative in",
+    "any relative",
+    "relatives working",
+    "family member working",
+    "family member employed",
+    "do you have relative",
+    "do you have any relative",
+    "known person working",
+    "acquaintance working",
+    "know anyone working",
+)
+
+PREVIOUSLY_INTERVIEWED_KEYWORDS = (
+    "have you interviewed",
+    "interviewed before",
+    "interviewed with",
+    "interviewed in past",
+    "interviewed in the past",
+    "previously interviewed",
+    "applied before",
+    "applied previously",
+    "applied with us before",
+)
+
+GENAI_TOOL_KEYWORDS = (
+    "gen ai tool",
+    "generative ai tool",
+    "ai tool",
+    "chatgpt",
+    "llm tool",
+    "copilot",
+    "ai assistant",
+    "have you used ai",
+    "have you worked on ai",
+    "worked on any gen ai",
+    "worked on gen ai",
 )
 
 HIGHEST_DEGREE_KEYWORDS = (
@@ -541,11 +676,11 @@ def _is_lacs_format(question):
 
 
 def preferred_current_ctc_text(question=""):
-    return "13.5" if _is_lacs_format(question) else "1350000"
+    return "14" if _is_lacs_format(question) else "1400000"
 
 
 def preferred_expected_ctc_text(question=""):
-    return "20" if _is_lacs_format(question) else "2000000"
+    return "18" if _is_lacs_format(question) else "1800000"
 
 
 def preferred_notice_period_buyout_text():
@@ -761,6 +896,69 @@ def find_preferred_highest_degree_option(options, label_getter=None):
             if any(re.search(p, norm) for p in pattern_group):
                 return option
     return None
+
+
+def is_yymm_experience_prompt(text):
+    """Detects experience questions that ask for answer in YY/MM format."""
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in YYMM_FORMAT_KEYWORDS)
+
+
+def is_years_of_experience_prompt(text):
+    """Detects experience quantity questions regardless of the technology."""
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return (
+        normalized.startswith("years of experience")
+        or normalized.startswith("years of exp")
+        or normalized.startswith("how many years of experience")
+        or normalized.startswith("how many years of exp")
+    )
+
+
+def is_current_company_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in CURRENT_COMPANY_KEYWORDS)
+
+
+def is_jd_rating_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in JD_RATING_KEYWORDS)
+
+
+def is_email_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in EMAIL_KEYWORDS)
+
+
+def is_relative_at_company_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in RELATIVE_AT_COMPANY_KEYWORDS)
+
+
+def is_previously_interviewed_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in PREVIOUSLY_INTERVIEWED_KEYWORDS)
+
+
+def is_genai_tool_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in GENAI_TOOL_KEYWORDS)
 
 
 def find_preferred_disability_option(options, label_getter=None):

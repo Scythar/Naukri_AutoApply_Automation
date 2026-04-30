@@ -23,12 +23,20 @@ from .answer_utils import (
     find_preferred_title_option,
     is_career_break_prompt,
     is_conditional_followup_prompt,
+    is_current_company_prompt,
+    is_email_prompt,
+    is_genai_tool_prompt,
     is_holding_offer_prompt,
     is_interview_availability_prompt,
+    is_jd_rating_prompt,
     is_location_prompt,
     is_pan_prompt,
     is_previous_company_prompt,
+    is_previously_interviewed_prompt,
+    is_relative_at_company_prompt,
     is_tech_yesno_prompt,
+    is_years_of_experience_prompt,
+    is_yymm_experience_prompt,
     is_current_ctc_prompt,
     is_disability_prompt,
     is_dob_prompt,
@@ -400,6 +408,14 @@ class ChatbotAgent:
             return preferred_disability_text()
         if is_interview_availability_prompt(question):
             return "Yes"
+        if is_relative_at_company_prompt(question):
+            return "No"
+        if is_previously_interviewed_prompt(question):
+            return "No"
+        if is_genai_tool_prompt(question):
+            return "Yes, Claude - code optimization and code review"
+        if is_email_prompt(question):
+            return self.profile_data.get("Email", "")
         if is_location_prompt(question):
             return self.profile_data.get("Location", "Bengaluru")
         if is_pan_prompt(question):
@@ -410,12 +426,20 @@ class ChatbotAgent:
             return "NA"
         if is_highest_degree_prompt(question):
             return preferred_highest_degree_text()
+        if is_jd_rating_prompt(question):
+            return "8.5"
         if is_tech_yesno_prompt(question):
             return "Yes"
+        if is_yymm_experience_prompt(question):
+            return "03/05"
+        if is_years_of_experience_prompt(question):
+            return "3.5"
         if normalized.startswith("how many years of experience") or normalized.startswith("relevant experience"):
             return "3.5"
         if is_tech_experience_prompt(question, self.tech_keywords):
             return "3.5"
+        if is_current_company_prompt(question):
+            return self.profile_data.get("Current company", "")
         if self._is_previous_employee_question(question):
             return "No"
         if is_previous_company_prompt(question):
@@ -471,12 +495,64 @@ class ChatbotAgent:
                         )
                         if best:
                             selected_chip = next((c for c, t in chip_labels if t == best), None)
+                        if not selected_chip:
+                            for c, t in chip_labels:
+                                nt = normalize_text(t)
+                                if any(kw in nt for kw in ("immediate", "0 day", "0day", "no notice", "immediately", "zero")):
+                                    selected_chip = c
+                                    break
+                        if not selected_chip:
+                            # Pick shortest duration chip; skip any "skip this question" chip
+                            best_days, best_chip, first_non_skip = float('inf'), None, None
+                            for c, t in chip_labels:
+                                nt = normalize_text(t)
+                                if "skip" in nt:
+                                    continue
+                                if first_non_skip is None:
+                                    first_non_skip = c
+                                nums = [float(n) for n in re.findall(r'\d+', t)]
+                                if nums and min(nums) < best_days:
+                                    best_days = min(nums)
+                                    best_chip = c
+                            selected_chip = best_chip or first_non_skip
+                    elif is_last_working_day_prompt(question):
+                        # Find chip matching Oct/31/2025
+                        for c, t in chip_labels:
+                            nt = normalize_text(t)
+                            if "skip" in nt:
+                                continue
+                            if re.search(r'\boct(?:ober)?\b', nt) or re.search(r'\b31\b.*\b2025\b', nt) or re.search(r'\b2025\b.*\b31\b', nt):
+                                selected_chip = c
+                                break
+                        if not selected_chip:
+                            for c, t in chip_labels:
+                                if "skip" not in normalize_text(t):
+                                    selected_chip = c
+                                    break
                     elif is_disability_prompt(question):
                         best = find_preferred_disability_option(
                             [t for _, t in chip_labels]
                         )
                         if best:
                             selected_chip = next((c for c, t in chip_labels if t == best), None)
+                    elif is_years_of_experience_prompt(question) or is_tech_experience_prompt(question, self.tech_keywords):
+                        target = 3.5
+                        best_chip, best_diff = None, float('inf')
+                        for c, t in chip_labels:
+                            nums = [float(n) for n in re.findall(r'\d+(?:\.\d+)?', t)]
+                            if nums:
+                                mid = sum(nums) / len(nums)
+                                if abs(mid - target) < best_diff:
+                                    best_diff = abs(mid - target)
+                                    best_chip = c
+                        if not best_chip:
+                            # Chips are yes/no style — pick "Yes"
+                            for c, t in chip_labels:
+                                if re.search(r'\byes\b', normalize_text(t)):
+                                    best_chip = c
+                                    break
+                        if best_chip:
+                            selected_chip = best_chip
                     if not selected_chip:
                         for c in chips:
                             chip_text = (c.inner_text() or "").strip().lower()
@@ -509,6 +585,11 @@ class ChatbotAgent:
                     selected_option = None
                     if is_notice_period_prompt(question):
                         selected_option = find_preferred_notice_option(options, label_getter=lambda option: option["label"])
+                        if not selected_option:
+                            # Yes/No style (e.g., "Are you available to join immediately?") → Yes
+                            selected_option = find_preferred_positive_preference_option(
+                                options, label_getter=lambda option: option["label"]
+                            )
                     elif is_title_prompt(question):
                         selected_option = find_preferred_title_option(options, label_getter=lambda option: option["label"])
                     elif is_marital_status_prompt(question):
@@ -527,6 +608,17 @@ class ChatbotAgent:
                         selected_option = find_preferred_disability_option(
                             options, label_getter=lambda option: option["label"]
                         )
+                    elif is_career_break_prompt(question) or is_holding_offer_prompt(question):
+                        selected_option = next(
+                            (o for o in options if re.search(r'\bno\b', normalize_text(o["label"]))), None
+                        )
+                    elif (self._is_previous_employee_question(question)
+                          or is_previous_company_prompt(question)
+                          or is_relative_at_company_prompt(question)
+                          or is_previously_interviewed_prompt(question)):
+                        selected_option = next(
+                            (o for o in options if re.search(r'\bno\b', normalize_text(o["label"]))), None
+                        )
                     elif is_highest_degree_prompt(question):
                         selected_option = find_preferred_highest_degree_option(
                             options, label_getter=lambda option: option["label"]
@@ -535,6 +627,14 @@ class ChatbotAgent:
                         selected_option = find_preferred_positive_preference_option(
                             options, label_getter=lambda option: option["label"]
                         )
+                    # General catch-all: yes/no radio → always pick Yes
+                    if not selected_option:
+                        _norms = [normalize_text(o["label"]) for o in options]
+                        if (all(re.search(r'\byes\b', n) or re.search(r'\bno\b', n) for n in _norms)
+                                and any(re.search(r'\byes\b', n) for n in _norms)):
+                            selected_option = find_preferred_positive_preference_option(
+                                options, label_getter=lambda option: option["label"]
+                            )
                     finnas = None if selected_option else self._match_option_by_answer(answer, options)
                     if not finnas and not selected_option:
                         labels = [opt["label"] for opt in options]
@@ -791,14 +891,11 @@ class NaukriBot:
             return False, "missing job title"
 
         if self._title_has_disallowed_backend(title):
-            return False, "title mentions non-Java backend technology"
+            if not self._title_has_java_backend(title):
+                return False, "title mentions non-Java backend technology"
 
         if self._title_has_conditional_non_java_language(title):
-            allows_full_stack_java = (
-                any(keyword in normalized_title for keyword in ["full stack", "fullstack", "sdet"])
-                and (self._title_has_java_backend(title) or re.search(r"\bjava\b", normalized_description))
-            )
-            if not allows_full_stack_java:
+            if not self._title_has_java_backend(title):
                 return False, "title mentions a non-Java programming language"
 
         java_desc_count = len(re.findall(r"\bjava\b", normalized_description))
@@ -849,12 +946,16 @@ class NaukriBot:
             self.page.type('input[type="password"]', self.usr[1],delay=100)
             self.page.click('button[type="submit"]')
             try:
-                self.page.wait_for_url(url="https://www.naukri.com/mnjuser/homepage",wait_until="networkidle")
+                self.page.wait_for_url("**/mnjuser/homepage", timeout=15000)
+            except Exception:
+                pass
+            self.page.wait_for_timeout(2000)
+            current_url = self.page.url
+            if "naukri.com" in current_url and "login" not in current_url.lower():
                 print("Login successful.")
                 return True
-            except:
-                print("Login failed.")
-                return False
+            print("Login failed.")
+            return False
         except Exception as e:
             print(f"Error during login: {e}")
             return False
@@ -907,36 +1008,50 @@ class NaukriBot:
         return None
 
     def _click_and_get_company_apply_url(self):
-        """Click Apply on Company Site, navigate in same tab, return final URL."""
+        """Click Apply on Company Site, capture URL from new tab, close tab, return URL."""
         btn_selectors = [
             'a[href*="applyredirect"]',
             'a:has-text("Apply on Company Site")',
             'a:has-text("Apply on company site")',
+            'a:has-text("Apply on Company Website")',
             'a:has-text("company site")',
+            'a:has-text("company website")',
             'button:has-text("Apply on Company Site")',
+            'button:has-text("Apply on Company Website")',
             '[class*="company-btn"]',
             '[class*="companyBtn"]',
+            '[class*="apply-btn"]',
+            '[class*="applyBtn"]',
         ]
         for selector in btn_selectors:
             try:
                 el = self.page.query_selector(selector)
                 if not el:
                     continue
-                # Prefer static href (fastest, no navigation)
+                # Return href directly if already a real external URL
                 href = el.get_attribute("href") or el.get_attribute("data-href")
-                if href and not href.startswith("javascript"):
+                if href and not href.startswith("javascript") and not self._is_naukri_url(href):
                     return href
-                # Force same-tab navigation to avoid new-tab taskbar flash
+                # Click and capture the new tab that opens
                 try:
-                    self.page.evaluate(
-                        "window.open = (url) => { window.location.href = url; return window; };"
-                        "document.querySelectorAll('a[target=\"_blank\"]').forEach(a => a.target = '_self');"
-                    )
+                    with self.page.context.expect_page(timeout=5000) as new_page_info:
+                        el.click()
+                    new_page = new_page_info.value
+                    try:
+                        new_page.wait_for_load_state('load', timeout=10000)
+                    except Exception:
+                        pass
+                    url = new_page.url
+                    new_page.close()
+                    if url and not self._is_naukri_url(url):
+                        return url
                 except Exception:
-                    pass
-                el.click()
-                self._wait_for_page_ready()
-                return self.page.url
+                    # No new tab opened — check if same-tab navigated
+                    self._wait_for_page_ready()
+                    url = self.page.url
+                    if url and not self._is_naukri_url(url):
+                        return url
+                return None
             except Exception:
                 continue
         return None
@@ -959,17 +1074,29 @@ class NaukriBot:
             return value
         return 999
 
+    def _save_did_not_apply(self, reason, url):
+        filepath = "./DidNotApply.txt"
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        entry = f"[{timestamp}] | {reason} | {url}\n"
+        with open(filepath, "a", encoding="utf-8") as f:
+            f.write(entry)
+
+    def _is_naukri_url(self, url):
+        return bool(url and "naukri.com" in url)
+
     def _save_external_apply(self, job_title, company, naukri_url, apply_url):
         filepath = "./external_apply.txt"
+        # Treat any naukri.com URL as "no real external URL"
+        real_apply_url = apply_url if (apply_url and apply_url != naukri_url and not self._is_naukri_url(apply_url)) else None
         if os.path.exists(filepath):
             with open(filepath, "r", encoding="utf-8") as f:
                 existing = f.read()
-            if naukri_url in existing or (apply_url and apply_url != naukri_url and apply_url in existing):
+            if naukri_url in existing or (real_apply_url and real_apply_url in existing):
                 print(f"Already in external_apply.txt, skipping: {job_title} @ {company}")
                 return
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        if apply_url and apply_url != naukri_url:
-            entry = f"[{timestamp}] | Apply: {apply_url} | Naukri: {naukri_url} | {job_title} @ {company} |\n"
+        if real_apply_url:
+            entry = f"[{timestamp}] | Apply: {real_apply_url} | Naukri: {naukri_url} | {job_title} @ {company} |\n"
         else:
             entry = f"[{timestamp}] | Naukri: {naukri_url} | {job_title} @ {company} |\n"
         with open(filepath, "a", encoding="utf-8") as f:
@@ -977,22 +1104,15 @@ class NaukriBot:
         print(f"Saved to external_apply.txt: {job_title} @ {company}")
 
     def apply_(self):
-        self.page.wait_for_load_state('networkidle')
-        job_links = self.page.eval_on_selector_all(
-            '.title',
-            '''elements => elements
-                .map(element => ({
-                    href: element.getAttribute("href"),
-                    title: (element.textContent || "").trim(),
-                    company: (
-                        (
-                            (element.closest("article") || element.closest("div") || element.parentElement)
-                            ?.querySelector('[class*="comp-name"], .comp-name')
-                        )?.textContent || ""
-                    ).trim(),
-                }))
-                .filter(item => item.href !== null)'''
-        )
+        self._wait_for_page_ready()
+        # Wait for job cards to render (React SPA needs time after load)
+        for sel in ['.title', 'article.jobTuple', '[class*="jobCard"]', '[class*="job-card"]']:
+            try:
+                self.page.wait_for_selector(sel, timeout=8000)
+                break
+            except Exception:
+                continue
+        job_links = self._extract_job_links_from_page()
         if not job_links:
             print(f"No job links found on page {self.page_no}.")
             return
@@ -1008,26 +1128,30 @@ class NaukriBot:
                 listing_company = (job.get("company") or "").strip()
                 self.page.wait_for_timeout(2000)
                 self.page.goto(jl)
-                self.page.wait_for_load_state('networkidle')
+                self._wait_for_page_ready()
                 page_title = self._extract_job_title_from_page()
                 page_company = self._extract_company_name_from_page()
                 job_title = page_title or listing_title
                 company_name = page_company or listing_company
                 if self._is_blocked_company(company_name):
                     print(f"Skipping blocked company ({company_name}): {job_title or jl}")
+                    self._save_did_not_apply(f"Blocked company: {company_name}", jl)
                     continue
                 job_description = self._extract_job_description()
                 should_apply, reason = self._is_java_job(job_title, job_description)
                 if not should_apply:
                     print(f"Skipping job due to filter ({reason}): {job_title or jl}")
+                    self._save_did_not_apply(reason, jl)
                     continue
                 apply = self.page.query_selector('#apply-button')
                 if not apply:
                     if self._is_already_applied():
                         print(f"Already applied, skipping: {job_title or jl}")
+                        self._save_did_not_apply("Already applied", jl)
                         continue
                     if not re.search(r"\bjava\b", normalize_text(job_description)):
                         print(f"Skipping external apply (no Java in description): {job_title or jl}")
+                        self._save_did_not_apply("No Java in description (external)", jl)
                         continue
                     external_url = self._click_and_get_company_apply_url() or jl
                     self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
@@ -1035,6 +1159,7 @@ class NaukriBot:
 
                 if self._is_already_applied():
                     print(f"Already applied, skipping: {job_title or jl}")
+                    self._save_did_not_apply("Already applied", jl)
                     continue
                 apply.click()
                 try:
@@ -1047,6 +1172,7 @@ class NaukriBot:
                         self.applied_count += 1
                     except:
                         print(f"Skipping job (not applied): {job_title or jl}")
+                        self._save_did_not_apply("Apply failed", jl)
                         continue
             except Exception as e:
                 print(jl, "_______", e)
@@ -1277,6 +1403,7 @@ class NaukriBot:
         max_age = int(self.jobage) if hasattr(self, 'jobage') and self.jobage else 1
         if age_days > max_age:
             print(f"Skipping recommended job (age {age_days}d > {max_age}d): {listing_title}")
+            self._save_did_not_apply(f"Too old ({age_days}d > {max_age}d): {listing_title}", f"{rec_page_url}#{job_id}")
             return False
         try:
             # Return to recommended page + re-select section if we navigated away
@@ -1310,25 +1437,30 @@ class NaukriBot:
 
             if self._is_blocked_company(company_name):
                 print(f"Skipping blocked company ({company_name}): {job_title or jl}")
+                self._save_did_not_apply(f"Blocked company: {company_name}", jl)
                 return False
             job_description = self._extract_job_description()
             should_apply, reason = self._is_java_job(job_title, job_description)
             if not should_apply:
                 print(f"Skipping job due to filter ({reason}): {job_title or jl}")
+                self._save_did_not_apply(reason, jl)
                 return False
             apply = self.page.query_selector('#apply-button')
             if not apply:
                 if self._is_already_applied():
                     print(f"Already applied, skipping: {job_title or jl}")
+                    self._save_did_not_apply("Already applied", jl)
                     return False
                 if not re.search(r"\bjava\b", normalize_text(job_description)):
                     print(f"Skipping external apply (no Java in description): {job_title or jl}")
+                    self._save_did_not_apply("No Java in description (external)", jl)
                     return False
                 external_url = self._click_and_get_company_apply_url() or jl
                 self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
                 return False
             if self._is_already_applied():
                 print(f"Already applied, skipping: {job_title or jl}")
+                self._save_did_not_apply("Already applied", jl)
                 return False
             apply.click()
             try:
@@ -1343,6 +1475,7 @@ class NaukriBot:
                     return True
                 except Exception:
                     print(f"Skipping job (not applied): {job_title or jl}")
+                    self._save_did_not_apply("Apply failed", jl)
                     return False
         except Exception as e:
             print(f"Error on recommended job {job_id} ({listing_title}): {e}")
@@ -1419,7 +1552,13 @@ class NaukriBot:
 
     def _apply_jobs_from_current_page(self):
         """Apply to all jobs listed on the current page using extracted job links."""
-        self.page.wait_for_load_state('networkidle')
+        self._wait_for_page_ready()
+        for sel in ['.title', 'article.jobTuple', '[class*="jobCard"]', '[class*="job-card"]']:
+            try:
+                self.page.wait_for_selector(sel, timeout=8000)
+                break
+            except Exception:
+                continue
         job_links = self._extract_job_links_from_page()
         if not job_links:
             print("No job links found on this page.")
@@ -1436,32 +1575,37 @@ class NaukriBot:
                 listing_company = (job.get("company") or "").strip()
                 self.page.wait_for_timeout(2000)
                 self.page.goto(jl)
-                self.page.wait_for_load_state('networkidle')
+                self._wait_for_page_ready()
                 page_title = self._extract_job_title_from_page()
                 page_company = self._extract_company_name_from_page()
                 job_title = page_title or listing_title
                 company_name = page_company or listing_company
                 if self._is_blocked_company(company_name):
                     print(f"Skipping blocked company ({company_name}): {job_title or jl}")
+                    self._save_did_not_apply(f"Blocked company: {company_name}", jl)
                     continue
                 job_description = self._extract_job_description()
                 should_apply, reason = self._is_java_job(job_title, job_description)
                 if not should_apply:
                     print(f"Skipping job due to filter ({reason}): {job_title or jl}")
+                    self._save_did_not_apply(reason, jl)
                     continue
                 apply = self.page.query_selector('#apply-button')
                 if not apply:
                     if self._is_already_applied():
                         print(f"Already applied, skipping: {job_title or jl}")
+                        self._save_did_not_apply("Already applied", jl)
                         continue
                     if not re.search(r"\bjava\b", normalize_text(job_description)):
                         print(f"Skipping external apply (no Java in description): {job_title or jl}")
+                        self._save_did_not_apply("No Java in description (external)", jl)
                         continue
                     external_url = self._click_and_get_company_apply_url() or jl
                     self._save_external_apply(job_title or "Unknown", company_name or "Unknown", jl, external_url)
                     continue
                 if self._is_already_applied():
                     print(f"Already applied, skipping: {job_title or jl}")
+                    self._save_did_not_apply("Already applied", jl)
                     continue
                 apply.click()
                 try:
@@ -1474,12 +1618,13 @@ class NaukriBot:
                         self.applied_count += 1
                     except Exception:
                         print(f"Skipping job (not applied): {job_title or jl}")
+                        self._save_did_not_apply("Apply failed", jl)
                         continue
             except Exception as e:
                 print(jl, "_______", e)
                 continue
 
-    def filter_apply(self,s,e='',l='',ja='1',max_pages=None,recommended_sections=None):
+    def filter_apply(self, s, e='', l='', ja='1', max_pages=None, recommended_sections=None, skip_search=False):
         self.search = s
         if not self.search:
             print("Search keyword required")
@@ -1493,26 +1638,30 @@ class NaukriBot:
         self._start_pause_listener()
         time.sleep(1)
         try:
-            self._apply_recommended_jobs(sections=recommended_sections)
-            max_restarts = 0 if max_pages else 5
-            for attempt in range(max_restarts + 1):
-                if attempt > 0:
-                    print(f"\nRestarting search (attempt {attempt}/{max_restarts})...")
-                    self.page_no = 1
-                prev_count = self.applied_count
-                self.filter_()
-                self.base_page_url = self.page.url
-                self.apply_()
-                if self.applied_count >= self.applno:
-                    break
-                if self.applied_count == prev_count:
-                    print("Search exhausted, no new jobs found.")
-                    break
+            if recommended_sections is not None:
+                self._apply_recommended_jobs(sections=recommended_sections)
+            if not skip_search:
+                max_restarts = 0 if max_pages else 5
+                for attempt in range(max_restarts + 1):
+                    if attempt > 0:
+                        print(f"\nRestarting search (attempt {attempt}/{max_restarts})...")
+                        self.page_no = 1
+                    prev_count = self.applied_count
+                    self.filter_()
+                    self.base_page_url = self.page.url
+                    self.apply_()
+                    if self.applied_count >= self.applno:
+                        break
+                    if self.applied_count == prev_count:
+                        print("Search exhausted, no new jobs found.")
+                        break
         except KeyboardInterrupt:
             print(f"\nStopped by user. Total jobs applied: {self.applied_count}")
+        except Exception as e:
+            print(f"\nUnexpected error (applied {self.applied_count} so far): {e}")
         finally:
             self.close()
-        return {"response":"applied successfully","applied":self.applied_count}
+        return {"response": "applied successfully", "applied": self.applied_count}
 
     def filter_(self):
         serch = self.page.locator(".nI-gNb-sb__icon-wrapper")
