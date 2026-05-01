@@ -263,6 +263,21 @@ LOCATION_KEYWORDS = (
     "loaction",           # common typo
 )
 
+LOCATION_OK_PHRASES = (
+    "is it ok",
+    "ok for you",
+    "okay for you",
+    "is that ok",
+    "fine for you",
+    "fine with you",
+    "work for you",
+    "suitable for you",
+    "comfortable with location",
+    "ok with location",
+    "ok with",
+    "acceptable to you",
+)
+
 PAN_KEYWORDS = (
     "pan number",
     "pan card",
@@ -592,6 +607,16 @@ def is_location_prompt(text):
     return any(keyword in normalized for keyword in LOCATION_KEYWORDS)
 
 
+def is_location_ok_prompt(text):
+    """Questions asking if a specific work/office location is acceptable (Yes/No)."""
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    has_location = "location" in normalized or "office" in normalized
+    has_ok = any(phrase in normalized for phrase in LOCATION_OK_PHRASES)
+    return has_location and has_ok
+
+
 def is_pan_prompt(text):
     normalized = normalize_text(text)
     if not normalized:
@@ -646,6 +671,8 @@ def is_last_working_day_prompt(text):
     normalized = normalize_text(text)
     if not normalized:
         return False
+    if re.search(r'\blwd\b', normalized):
+        return True
     return any(keyword in normalized for keyword in LAST_WORKING_DAY_KEYWORDS)
 
 

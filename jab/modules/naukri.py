@@ -29,6 +29,7 @@ from .answer_utils import (
     is_holding_offer_prompt,
     is_interview_availability_prompt,
     is_jd_rating_prompt,
+    is_location_ok_prompt,
     is_location_prompt,
     is_pan_prompt,
     is_previous_company_prompt,
@@ -416,6 +417,8 @@ class ChatbotAgent:
             return "Yes, Claude - code optimization and code review"
         if is_email_prompt(question):
             return self.profile_data.get("Email", "")
+        if is_location_ok_prompt(question):
+            return "Yes"
         if is_location_prompt(question):
             return self.profile_data.get("Location", "Bengaluru")
         if is_pan_prompt(question):
@@ -529,6 +532,10 @@ class ChatbotAgent:
                                 if "skip" not in normalize_text(t):
                                     selected_chip = c
                                     break
+                    elif is_location_ok_prompt(question):
+                        selected_chip = next(
+                            (c for c, t in chip_labels if re.search(r'\byes\b', normalize_text(t))), None
+                        )
                     elif is_disability_prompt(question):
                         best = find_preferred_disability_option(
                             [t for _, t in chip_labels]
@@ -619,10 +626,29 @@ class ChatbotAgent:
                         selected_option = next(
                             (o for o in options if re.search(r'\bno\b', normalize_text(o["label"]))), None
                         )
+                    elif is_location_ok_prompt(question):
+                        selected_option = find_preferred_positive_preference_option(
+                            options, label_getter=lambda option: option["label"]
+                        )
                     elif is_highest_degree_prompt(question):
                         selected_option = find_preferred_highest_degree_option(
                             options, label_getter=lambda option: option["label"]
                         )
+                    elif is_tech_experience_prompt(question, self.tech_keywords) or is_years_of_experience_prompt(question):
+                        # Numeric nearest-match: pick the option whose midpoint is closest to 3.5 years
+                        _target = 3.5
+                        _best_opt, _best_diff = None, float('inf')
+                        for opt in options:
+                            _lbl = normalize_text(opt["label"])
+                            if "skip" in _lbl:
+                                continue
+                            _nums = [float(n) for n in re.findall(r'\d+(?:\.\d+)?', opt["label"])]
+                            if _nums:
+                                _mid = sum(_nums) / len(_nums)
+                                if abs(_mid - _target) < _best_diff:
+                                    _best_diff = abs(_mid - _target)
+                                    _best_opt = opt
+                        selected_option = _best_opt
                     elif self.positive_preference_mode and is_positive_preference_prompt(question):
                         selected_option = find_preferred_positive_preference_option(
                             options, label_getter=lambda option: option["label"]

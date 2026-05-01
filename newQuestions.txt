@@ -85,3 +85,159 @@
 [2026-04-25 01:46:28] | answered | Q: Earlier have you worked in TCS | A: [text] 3.5
 [2026-04-25 11:40:36] | answered | Q: How many years of experience do you have in Node.Js? | A: [text] 3.5
 [2026-04-25 11:40:39] | answered | Q: How many years of experience do you have in Kubernetes? | A: [text] 3.5
+[2026-04-26 12:20:14] | answered | Q: Total Years of Experience as Java Developer? | A: [text] 3.5
+[2026-04-26 12:20:17] | NEW (no override matched) | Q: Do you have PF for all the Companies Worked? | A: [text] No
+[2026-04-26 12:21:22] | NEW (no override matched) | Q: Your Total IT experience? ( in YY/MM ) | A: [text] 3.5
+[2026-04-26 12:21:25] | answered | Q: How many years of experience do you have in Micro Services? ( in YY/MM ) | A: [text] 3.5
+[2026-04-26 12:21:28] | NEW (no override matched) | Q: Your mail ID? | A: [text] 3
+[2026-04-26 12:21:31] | NEW (no override matched) | Q: Your mobile number? | A: [text] 8860053770
+[2026-04-26 12:21:35] | NEW (no override matched) | Q: Are you Interested to work in Gulf? | A: [text] yes
+[2026-04-26 12:23:06] | answered | Q: Are you currently living in or ready to relocate to Chennai ? | A: [radio] Yes
+[2026-04-26 12:23:10] | answered | Q: How many years of experience do you have in "Spring Boot" ? | A: [radio] 3-5 years
+[2026-04-26 12:23:13] | answered | Q: How many years of experience do you have as Senior Java Developer ? | A: [radio] 3-5 years
+[2026-04-26 12:39:12] | NEW (no override matched) | Q: Relevant exp in DB | A: [text] 3.5
+[2026-04-26 12:39:15] | NEW (no override matched) | Q: Current loaction | A: [text] 3.5
+[2026-04-26 12:41:56] | answered | Q: How many years of experience do you have in Marketo API Integration? | A: [text] 3.5
+[2026-04-26 12:42:47] | answered | Q: How many years of experience do you have in Saviynt ? | A: [radio] 3-5 years
+[2026-04-26 12:42:49] | answered | Q: How many years of experience do you have in IAM ? | A: [radio] 3-5 years
+[2026-04-26 12:42:52] | NEW (no override matched) | Q: IGA Experiecne | A: [text] 3
+[2026-04-26 12:44:32] | answered | Q: We're looking for Fullstack role with backend heavy profiles. Are you majorly working in Backend java? | A: [radio] Skip this question
+[2026-04-26 12:44:36] | answered | Q: Are you currently living in or ready to relocate to Gurugram ? | A: [radio] Yes
+[2026-04-26 12:44:39] | answered | Q: How many years of experience do you have ? | A: [radio] 0-4 years
+[2026-04-26 12:44:42] | answered | Q: What is your current ctc? | A: [chip] Skip this question
+[2026-04-26 12:44:43] | answered | Q: What is your expected ctc? | A: [chip] Skip this question
+[2026-04-26 12:44:44] | answered | Q: What is your Notice Period? | A: [chip] Skip this question
+[2026-04-26 12:44:46] | NEW (no override matched) | Q: In which company are you currently working? | A: [chip] Skip this question
+[2026-04-26 12:48:14] | answered | Q: How many years of experience do you have in J2Ee Technologies? | A: [text] 3.5
+[2026-04-26 12:48:17] | answered | Q: How many years of experience do you have in OOPS? | A: [text] 3.5
+[2026-04-26 12:48:24] | answered | Q: How many years of experience do you have in Web Api? | A: [text] 3.5
+[2026-04-26 12:48:27] | answered | Q: How many years of experience do you have in Frameworks? | A: [text] 3.5
+[2026-04-26 12:48:30] | NEW (no override matched) | Q: Have you gone through the job description ?if yes how do you rate yourself on the scale of 1 to 10 as per JD | A: [chip] Skip this question
+[2026-04-26 12:56:57] | answered | Q: Are you currently living in or ready to relocate to Mumbai ? | A: [radio] Yes
+[2026-04-26 12:57:23] | NEW (no override matched) | Q: Fixed CTC (Numeric Input Only) | A: [text] 1350000
+[2026-04-26 12:57:27] | NEW (no override matched) | Q: Variable Pay (Numeric Input Only) | A: [text] 3
+[2026-04-26 12:57:33] | NEW (no override matched) | Q: Offer in hand (If any) | A: [radio] No
+[2026-04-26 12:58:02] | answered | Q: Are you currently residing in Mumbai Suburban, Maharashtra or willing to relocate to Mumbai Suburban, Maharashtra? | A: [radio] Yes
+[2026-04-26 12:58:05] | answered | Q: The input seems invalid. What is your current CTC in Lacs per annum? | A: [chip] Skip this question
+[2026-04-26 12:59:50] | NEW (no override matched) | Q: Years of experience on Node JS | A: [chip] Skip this question
+[2026-04-26 12:59:51] | answered | Q: Years of Experience on React JS | A: [chip] Skip this question
+[2026-04-26 12:59:53] | answered | Q: Years of Experience on Java Script | A: [chip] Skip this question
+[2026-04-26 12:59:54] | NEW (no override matched) | Q: Years of Experience in BFSI Domain | A: [chip] Skip this question
+[2026-04-26 12:59:55] | answered | Q: Years of experience in Python/Golang | A: [chip] Skip this question
+[2026-04-26 12:59:56] | answered | Q: Years of experience on AWS/Azure Cloud | A: [chip] Skip this question
+[2026-04-26 12:59:58] | NEW (no override matched) | Q: years of experience on AI/LLM tools and which tools you have used. | A: [chip] Skip this question
+[2026-04-26 13:06:01] | answered | Q: AWS cloud exp? | A: [chip] Skip this question
+[2026-04-27 15:46:41] | answered | Q: Are you currently residing in Pune, Maharashtra or willing to relocate to Pune, Maharashtra? | A: [radio] Yes
+[2026-04-27 15:46:45] | NEW (no override matched) | Q: Are you aware of the term TDD? | A: [radio] Yes
+[2026-04-27 15:51:42] | answered | Q: How many years of experience do you have in Denodo? | A: [text] 3.5
+[2026-04-27 15:51:46] | answered | Q: How many years of experience do you have in Data Visualization? | A: [text] 3.5
+[2026-04-27 15:51:49] | answered | Q: How many years of experience do you have in Metadata Management? | A: [text] 3.5
+[2026-04-27 15:51:52] | answered | Q: Are you currently residing in Bengaluru, Karnataka or willing to relocate to Bengaluru, Karnataka? | A: [radio] Yes
+[2026-04-27 15:51:55] | answered | Q: How many years of experience do you have in Database? | A: [text] 3.5
+[2026-04-27 15:51:58] | answered | Q: How many years of experience do you have in Performance Optimization? | A: [text] 3.5
+[2026-04-27 15:52:37] | NEW (no override matched) | Q: Willingness to attend Virtual Interview 2 May 26 | A: [radio] yes
+[2026-04-27 15:52:54] | answered | Q: How many years of experience do you have in Angular? | A: [text] 3.5
+[2026-04-27 15:55:50] | answered | Q: How many years of experience do you have in Python? | A: [text] 3.5
+[2026-04-27 15:55:53] | answered | Q: How many years of experience do you have in React.Js or angular? | A: [text] 3.5
+[2026-04-27 15:55:56] | answered | Q: What is your notice period?Lwd? | A: [chip] Skip this question
+[2026-04-27 15:55:57] | NEW (no override matched) | Q: Please share pancard number? | A: [chip] Skip this question
+[2026-04-27 15:57:50] | answered | Q: Total Experience in Java? | A: [text] 3.5
+[2026-04-27 16:01:41] | answered | Q: How many years of experience do you have in Struts Framework? | A: [text] 3.5
+[2026-04-27 16:01:44] | answered | Q: How many years of experience do you have in Oracle Database? | A: [text] 3.5
+[2026-04-27 16:02:20] | NEW (no override matched) | Q: How many experience do you have in this field? | A: [text] 3
+[2026-04-27 16:03:02] | NEW (no override matched) | Q: Are you currently living in Thiruvananthapuram? | A: [radio] Yes
+[2026-04-27 16:03:05] | answered | Q: Are you available to join immediately? | A: [radio] No
+[2026-04-27 16:03:34] | answered | Q: How many years of experience do you have in JSP Servlets ? | A: [radio] 3-5 years
+[2026-04-27 16:03:37] | answered | Q: How many years of experience do you have in Javascript ? | A: [radio] 3-5 years
+[2026-04-27 16:03:40] | answered | Q: How many years of experience do you have in spring boot/microservices | A: [text] 3.5
+[2026-04-27 16:03:53] | NEW (no override matched) | Q: What is your expected hourly rate in USD? | A: [text] 1800000
+[2026-04-27 16:03:57] | NEW (no override matched) | Q: How many hours per week are you available to work? | A: [text] Bengaluru
+[2026-04-27 16:04:00] | NEW (no override matched) | Q: This is a remote contractual opportunity (Part-Time). Are you comfortable working on a contractual basis? | A: [radio] No
+[2026-04-27 16:04:03] | NEW (no override matched) | Q: Compensation for this role will be paid in USD on an hourly basis. Are you comfortable receiving payment in USD? | A: [radio] No
+[2026-04-27 16:04:06] | answered | Q: Have you worked with libGDX? | A: [radio] Yes
+[2026-04-27 16:04:27] | answered | Q: How many years of relevant experience do you have in Fullstack Development with java and angular? | A: [text] 3.5
+[2026-04-27 16:04:30] | answered | Q: What is your current location and preferred location? | A: [text] Bengaluru
+[2026-04-27 16:05:09] | answered | Q: Are you currently residing in Hyderabad, Telangana or willing to relocate to Hyderabad, Telangana? | A: [radio] Yes
+[2026-04-28 16:03:12] | answered | Q: How many years of experience you have in total? | A: [text] 3.5
+[2026-04-28 16:03:18] | NEW (no override matched) | Q: Are you comfortable for WFO in a 5 day working setup? | A: [radio] Yes
+[2026-04-28 16:04:07] | answered | Q: If Serving Notice period, Mention LWD? | A: [text] 0
+[2026-04-28 16:04:13] | NEW (no override matched) | Q: Are you available to take virtual interview on this weekday? | A: [radio] Yes
+[2026-04-29 18:50:25] | answered | Q: How many years of experience do you have in Bis? | A: [text] 3.5
+[2026-04-29 18:50:31] | answered | Q: How many years of experience do you have in Mapping? | A: [text] 3.5
+[2026-04-29 18:53:47] | NEW (no override matched) | Q: Reason for job change | A: [text] Bengaluru
+[2026-04-29 18:53:51] | answered | Q: Have you worked in past with NPCI or any of its subsidiary company? | A: [radio] No
+[2026-04-29 18:53:54] | NEW (no override matched) | Q: Do you have Relative working in NPCI or in any of its subsidiary company? | A: [radio] Yes
+[2026-04-29 18:53:56] | NEW (no override matched) | Q: Have you interviewed with NPCI or any NPCI subsidiary in Past? | A: [radio] Yes
+[2026-04-29 18:53:59] | NEW (no override matched) | Q: If interviewed in past is Yes, then please elaborate when you were interviewed and for which role | A: [chip] Skip this question
+[2026-04-29 18:54:00] | NEW (no override matched) | Q: Are you comfortable working from office for 5day? | A: [radio] Yes
+[2026-04-29 18:54:03] | NEW (no override matched) | Q: Have you worked on any gen AI tool? If yes, then name the gen AI tool you used and for what purpose do you use? | A: [text] No
+[2026-04-29 18:54:06] | answered | Q: What is your preferred location from below options | A: [radio] Mumbai (Goregaon east)
+[2026-04-29 18:55:37] | NEW (no override matched) | Q: Please read the data privacy consent policy on https://cimpress-uat.ripplehire.com/candidate/externaldocuments?accessToken=a788cc0203 and consent below | A: [chip] Yes
+[2026-04-29 18:56:35] | answered | Q: How many years of experience do you have in Node.Js ? | A: [text] 3.5
+[2026-04-29 18:56:40] | answered | Q: How many years of experience do you have as Sr. Full Stack Developer ? | A: [text] 3.5
+[2026-04-29 18:56:50] | answered | Q: Rate yourself on scale of 5. 1)Angular/React 2)Node 3)Mongodb | A: [text] 8.5
+[2026-04-29 18:57:51] | answered | Q: How many years of experience do you have in Saas Product Development? | A: [text] 3.5
+[2026-04-29 18:58:11] | answered | Q: How many years of experience do you have in Java and mention Java version? | A: [text] 3.5
+[2026-04-29 18:58:43] | NEW (no override matched) | Q: Please upload your resume. | A: [chip] Upload Resume
+[2026-04-29 18:59:10] | answered | Q: How many years of experience do you have as Java Full Stack Developer ? | A: [radio] 3-5 years
+[2026-04-29 18:59:13] | answered | Q: How many years of experience do you have in Angular ? | A: [radio] 3-5 years
+[2026-04-29 18:59:16] | answered | Q: How many years of experience do you have in System Design ? | A: [radio] 3-5 years
+[2026-04-29 18:59:42] | answered | Q: How many years of experience do you have in DSA? | A: [text] 3.5
+[2026-04-29 18:59:45] | answered | Q: Are you currently residing in Gurugram, Haryana or willing to relocate to Gurugram, Haryana? | A: [radio] Yes
+[2026-04-29 19:00:02] | answered | Q: How many years of experience do you have in React Js.? | A: [text] 3.5
+[2026-04-29 19:00:05] | answered | Q: Preferred Work Location? (5 days Work from Office) | A: [radio] Bengaluru
+[2026-04-29 19:00:08] | NEW (no override matched) | Q: Are you available for VIRTUAL Interview on 29th April 2026? | A: [radio] Yes
+[2026-04-29 19:00:36] | answered | Q: How many years of experience in Java ? | A: [chip] Skip this question
+[2026-04-29 19:00:37] | answered | Q: How many years of experience in Camunda? | A: [chip] Skip this question
+[2026-04-29 19:00:38] | answered | Q: How many years of experience in Angular/React , Specify? | A: [chip] Skip this question
+[2026-04-29 19:00:40] | NEW (no override matched) | Q: Can you join immediately/ in 15-20 days? | A: [radio] Skip this question
+[2026-04-29 19:00:43] | NEW (no override matched) | Q: Do you Have experience in any BPMN TOOL? name the tool and experience. | A: [text] Nitesh
+[2026-04-29 19:00:46] | NEW (no override matched) | Q: Can you work from Bangalore/Noida/gurgram/Pune (hybrid)? | A: [text] Bengaluru
+[2026-04-29 19:01:10] | answered | Q: Please enter your PAN Card Number | A: [text] GLCPS6619L
+[2026-04-29 19:01:17] | answered | Q: If answer to above question is Serving Notice Period, please select last working date below | A: [chip] Skip this question
+[2026-04-29 19:01:21] | answered | Q: Have you worked with us before? | A: [radio] Yes
+[2026-04-29 19:01:24] | answered | Q: If yes, share the employee ID | A: [chip] Skip this question
+[2026-04-29 19:01:26] | NEW (no override matched) | Q: Are you legally authorized to work in the country for which you are applying? | A: [radio] Yes
+[2026-04-29 19:02:11] | answered | Q: How many years of experience do you have in Bpmn? | A: [text] 3.5
+[2026-04-29 19:02:57] | answered | Q: How many years of experience do you have as Software Development Engineer ? | A: [radio] 3-5 years
+[2026-04-29 19:03:32] | answered | Q: Are you willing to work from office - 5 days? | A: [radio] Yes
+[2026-04-29 19:04:09] | answered | Q: How many years of experience do you have in Terraform? | A: [text] 3.5
+[2026-04-29 19:05:01] | answered | Q: How many years of experience do you have in Java Spring Boot ? | A: [radio] 3-5 years
+[2026-04-29 19:05:07] | answered | Q: How many years of experience do you have in React.Js ? | A: [radio] 3-5 years
+[2026-04-29 19:05:10] | answered | Q: How many years of experience do you have in Java Fullstack ? | A: [radio] 3-5 years
+[2026-04-29 19:06:01] | answered | Q: How many years of experience do you have in Java/ Spring Boot? | A: [text] 3.5
+[2026-04-29 19:06:04] | answered | Q: How many years of experience do you have in Angular/Rxjs? | A: [text] 3.5
+[2026-04-29 19:06:37] | answered | Q: Are you currently living in or ready to relocate to Hyderabad ? | A: [radio] Yes
+[2026-04-29 19:07:51] | NEW (no override matched) | Q: Mention your total years of experience. | A: [text] 3.5
+[2026-04-29 19:07:54] | answered | Q: Mention your experience with Java | A: [radio] 2.5-4yrs
+[2026-04-29 19:07:57] | answered | Q: Mention your experience with React.JS | A: [radio] 2.5-4yrs
+[2026-04-29 19:08:00] | answered | Q: Which cloud platforms have you worked with? | A: [radio] AWS
+[2026-04-29 19:08:02] | answered | Q: How many years of experience you have with cloud? | A: [text] 3.5
+[2026-04-29 19:08:05] | answered | Q: How many years of experience you have with Devops? | A: [text] 3.5
+[2026-04-29 19:08:09] | answered | Q: If service notice, please mention your Last working days | A: [text] 31/10/2025
+[2026-04-30 15:58:01] | answered | Q: How many years of experience do you have in Certified? | A: [text] 3.5
+[2026-04-30 15:58:06] | answered | Q: How many years of experience do you have in Guidewire? | A: [text] 3.5
+[2026-04-30 15:58:11] | answered | Q: How many years of experience do you have in Guidewire BC Configuration? | A: [text] 3.5
+[2026-04-30 15:58:14] | answered | Q: How many years of experience do you have in Billing Center? | A: [text] 3.5
+[2026-04-30 15:58:20] | answered | Q: How many years of experience do you have in Guidewire PC Configuration? | A: [text] 3.5
+[2026-04-30 15:59:59] | answered | Q: How many years of experience do you have in Dynamics CRM? | A: [text] 3.5
+[2026-04-30 16:00:02] | answered | Q: How many years of experience do you have in Powerapps? | A: [text] 3.5
+[2026-04-30 16:00:05] | answered | Q: How many years of experience do you have in Java Script? | A: [text] 3.5
+[2026-04-30 16:00:09] | answered | Q: How many years of experience do you have in Rest Api Integration? | A: [text] 3.5
+[2026-04-30 16:00:12] | answered | Q: How many years of experience do you have in GIT/ Azure? | A: [text] 3.5
+[2026-04-30 16:05:53] | answered | Q: How many years of experience do you have in Api Microservices? | A: [text] 3.5
+[2026-04-30 16:08:33] | answered | Q: Do you have any hands on experience with Angular, React, or Java Script/jQuery (Any) | A: [text] 3.5
+[2026-04-30 16:09:12] | answered | Q: How many years of experience do you have in Spring Boot Framework? | A: [text] 3.5
+[2026-04-30 16:09:15] | NEW (no override matched) | Q: Are you available for the virtual interview on 6th May ? | A: [text] Yes
+[2026-04-30 16:09:27] | NEW (no override matched) | Q: What is your total experience? | A: [text] 3.5
+[2026-04-30 16:09:30] | answered | Q: How many years of experience do you have in CICD ? | A: [text] 3.5
+[2026-04-30 16:09:33] | answered | Q: Bangalore is work location ? Is it ok ? | A: [text] Bengaluru
+[2026-04-30 16:10:56] | answered | Q: Exp. in JAVA Version Java 21 or Java 17 ? | A: [radio] Java 21
+[2026-04-30 16:10:59] | NEW (no override matched) | Q: Job location Thane west Office ok for you? | A: [radio] Skip this question
+[2026-04-30 16:11:02] | NEW (no override matched) | Q: what is your LWD? | A: [chip] Skip this question
+[2026-04-30 16:11:06] | answered | Q: exp. in RabbitMQ, MongoDB or other NoSQL databases, SQL | A: [radio] Skip this question
+[2026-04-30 16:12:24] | answered | Q: How many years of experience do you have in REST API? | A: [text] 3.5
+[2026-05-01 10:32:12] | NEW (no override matched) | Q: Previously Employed by Cognizant | A: [radio] Yes
+[2026-05-01 10:39:38] | answered | Q: What's your notice period? | A: [radio] 15 days or less
+[2026-05-01 10:39:41] | answered | Q: What's your expected salary? | A: [text] 1800000
+[2026-05-01 10:43:36] | answered | Q: Please specify your hometown/current location? | A: [text] Bengaluru
