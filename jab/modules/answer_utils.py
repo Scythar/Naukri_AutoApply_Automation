@@ -143,6 +143,22 @@ DIRECT_QUESTION_ANSWERS = {
     "reason for job change?": "Better growth opportunities and learning exposure",
     "reason for change": "Better growth opportunities and learning exposure",
     "reason for change?": "Better growth opportunities and learning exposure",
+    "have you handled any module/project end-to-end?": "Yes, around 5",
+    "have you handled any module/project end-to-end": "Yes, around 5",
+    "will you now or in the future require the sponsorship for the employment?": "No",
+    "will you now or in the future require the sponsorship for the employment": "No",
+    "will you now or in the future require sponsorship for employment?": "No",
+    "will you now or in the future require sponsorship for employment": "No",
+    "what is your desired start date?": "Immediately - within a week",
+    "what is your desired start date": "Immediately - within a week",
+    "desired start date?": "Immediately - within a week",
+    "desired start date": "Immediately - within a week",
+    "which ai coding agent do you use the most? and why?": "Claude - best code understanding, context retention, and multi-file reasoning",
+    "which ai coding agent do you use the most? and why": "Claude - best code understanding, context retention, and multi-file reasoning",
+    "which ai coding agent do you use the most and why?": "Claude - best code understanding, context retention, and multi-file reasoning",
+    "which ai coding agent do you use the most and why": "Claude - best code understanding, context retention, and multi-file reasoning",
+    "what % of your code do you write with ai, and where does ai still fall short so you prefer doing it manually?": "About 50% - AI helps with boilerplate, test cases, and routine logic. I prefer manual work for complex architecture, security-critical code, and nuanced business logic.",
+    "what % of your code do you write with ai, and where does ai still fall short so you prefer doing it manually": "About 50% - AI helps with boilerplate, test cases, and routine logic. I prefer manual work for complex architecture, security-critical code, and nuanced business logic.",
 }
 
 TECH_EXPERIENCE_KEYWORDS = (
@@ -243,6 +259,9 @@ INTERVIEW_AVAILABILITY_KEYWORDS = (
     "technical test",
     "coding test",
     "coding round",
+    "immediate joiner",
+    "are you immediate",
+    "are you an immediate",
 )
 
 LOCATION_KEYWORDS = (
@@ -308,9 +327,11 @@ TECH_YESNO_PHRASES = (
     "do you know",
     "have you used",
     "have you worked with",
+    "have you worked on",
     "are you familiar with",
     "do you have knowledge",
     "do you have experience with",
+    "do you have experience in",
     "have you implemented",
     "have you built",
     "can you code",
@@ -353,6 +374,10 @@ PREVIOUS_COMPANY_KEYWORDS = (
     "have you previously worked",
     "previously worked at",
     "previously worked in",
+    "previously employed",
+    "previously employed by",
+    "ever employed by",
+    "ever employed at",
     "worked at your previous",
     "have you ever worked for",
     "ex employee of",
@@ -462,10 +487,79 @@ GENAI_TOOL_KEYWORDS = (
     "llm tool",
     "copilot",
     "ai assistant",
+    "ai coding agent",
+    "coding agent",
+    "ai agent",
+    "code with ai",
+    "code using ai",
+    "% of your code",
     "have you used ai",
     "have you worked on ai",
     "worked on any gen ai",
     "worked on gen ai",
+)
+
+SPONSORSHIP_KEYWORDS = (
+    "sponsorship for employment",
+    "require sponsorship",
+    "need sponsorship",
+    "require the sponsorship",
+    "work authorization",
+    "work permit",
+    "visa sponsorship",
+    "require visa",
+    "employment authorization",
+    "employment visa",
+    "work visa",
+)
+
+POSTAL_CODE_KEYWORDS = (
+    "postal code",
+    "pin code",
+    "zip code",
+    "pincode",
+    "zipcode",
+    "post code",
+    "postcode",
+)
+
+GRADUATION_YEAR_KEYWORDS = (
+    "passing out year",
+    "passout year",
+    "graduation year",
+    "passing year",
+    "year of graduation",
+    "year of passing",
+    "year of passout",
+    "year of completion",
+    "b tech year",
+    "be year",
+    "engineering year",
+    "completed your degree",
+    "completed degree in",
+    "year of degree",
+    "year you graduated",
+    "when did you graduate",
+    "when did you pass",
+    "when did you complete",
+)
+
+ACADEMIC_SCORE_KEYWORDS = (
+    "percentage score in your 10th",
+    "percentage score in 10th",
+    "score in 10th",
+    "marks in 10th",
+    "10th 12th",
+    "10th and 12th",
+    "10th, 12th",
+    "academic percentage",
+    "academic score",
+    "academic marks",
+    "graduation percentage",
+    "graduation marks",
+    "graduation score",
+    "aggregate percentage",
+    "aggregate marks",
 )
 
 HIGHEST_DEGREE_KEYWORDS = (
@@ -965,6 +1059,34 @@ def is_email_prompt(text):
     if not normalized:
         return False
     return any(keyword in normalized for keyword in EMAIL_KEYWORDS)
+
+
+def is_graduation_year_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in GRADUATION_YEAR_KEYWORDS)
+
+
+def is_academic_score_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in ACADEMIC_SCORE_KEYWORDS)
+
+
+def is_sponsorship_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in SPONSORSHIP_KEYWORDS)
+
+
+def is_postal_code_prompt(text):
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+    return any(keyword in normalized for keyword in POSTAL_CODE_KEYWORDS)
 
 
 def is_relative_at_company_prompt(text):

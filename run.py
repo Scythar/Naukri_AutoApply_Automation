@@ -10,11 +10,11 @@ from jab.modules.naukri import NaukriBot
 
 EMAIL    = "niteshsingh5375@gmail.com"
 PASSWORD = "nitesh5375"
-SEARCH   = "java developer"
+SEARCH   = "java"
 JOB_AGE  = "1"
 MAX_PAGES = 10
 
-EXPERIENCE_PHASES = [3, 4]
+EXPERIENCE_PHASES = [3,4,2]
 
 # Sections to apply from on the Recommended Jobs page, in order.
 # Available sections: "Profile", "Applies", "Top Candidate", "You might like"

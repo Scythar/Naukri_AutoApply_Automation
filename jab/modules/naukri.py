@@ -25,7 +25,9 @@ from .answer_utils import (
     is_conditional_followup_prompt,
     is_current_company_prompt,
     is_email_prompt,
+    is_academic_score_prompt,
     is_genai_tool_prompt,
+    is_graduation_year_prompt,
     is_holding_offer_prompt,
     is_interview_availability_prompt,
     is_jd_rating_prompt,
@@ -33,8 +35,10 @@ from .answer_utils import (
     is_location_prompt,
     is_pan_prompt,
     is_previous_company_prompt,
+    is_postal_code_prompt,
     is_previously_interviewed_prompt,
     is_relative_at_company_prompt,
+    is_sponsorship_prompt,
     is_tech_yesno_prompt,
     is_years_of_experience_prompt,
     is_yymm_experience_prompt,
@@ -401,6 +405,13 @@ class ChatbotAgent:
             return preferred_marital_status_text()
         if is_hybrid_work_model_prompt(question):
             return preferred_hybrid_work_model_text()
+        if is_graduation_year_prompt(question):
+            return self.profile_data.get("Graduation Year", "2017")
+        if is_academic_score_prompt(question):
+            t = self.profile_data.get("10th Percentage", "78")
+            tw = self.profile_data.get("12th Percentage", "75")
+            g = self.profile_data.get("Graduation Percentage", "70")
+            return f"10th: {t}%, 12th: {tw}%, B.Tech: {g}%"
         if is_dob_prompt(question):
             return preferred_dob_text()
         if is_career_break_prompt(question):
@@ -416,13 +427,19 @@ class ChatbotAgent:
         if is_genai_tool_prompt(question):
             return "Yes, Claude - code optimization and code review"
         if is_email_prompt(question):
+            if any(kw in normalized for kw in ("phone", "mobile", "contact number", "phone number", "cell")):
+                return f"{self.profile_data.get('Email', '')} {self.profile_data.get('Mobile', '')}"
             return self.profile_data.get("Email", "")
         if is_location_ok_prompt(question):
             return "Yes"
         if is_location_prompt(question):
             return self.profile_data.get("Location", "Bengaluru")
+        if is_postal_code_prompt(question):
+            return self.profile_data.get("Address", {}).get("Pin Code", "")
         if is_pan_prompt(question):
             return self.profile_data.get("PAN", "")
+        if is_sponsorship_prompt(question):
+            return "No"
         if is_holding_offer_prompt(question):
             return "No"
         if is_conditional_followup_prompt(question) or is_employee_id_prompt(question):
@@ -553,9 +570,24 @@ class ChatbotAgent:
                                     best_diff = abs(mid - target)
                                     best_chip = c
                         if not best_chip:
-                            # Chips are yes/no style — pick "Yes"
                             for c, t in chip_labels:
                                 if re.search(r'\byes\b', normalize_text(t)):
+                                    best_chip = c
+                                    break
+                        if not best_chip:
+                            # Semantic level fallback (e.g. "Beginner/Intermediate/Expert" chips)
+                            for level in ("intermediate", "advanced", "mid level", "mid-level", "senior", "3"):
+                                for c, t in chip_labels:
+                                    nt = normalize_text(t)
+                                    if level in nt and "skip" not in nt:
+                                        best_chip = c
+                                        break
+                                if best_chip:
+                                    break
+                        if not best_chip:
+                            # Last resort: first non-skip chip
+                            for c, t in chip_labels:
+                                if "skip" not in normalize_text(t):
                                     best_chip = c
                                     break
                         if best_chip:
@@ -615,7 +647,9 @@ class ChatbotAgent:
                         selected_option = find_preferred_disability_option(
                             options, label_getter=lambda option: option["label"]
                         )
-                    elif is_career_break_prompt(question) or is_holding_offer_prompt(question):
+                    elif (is_career_break_prompt(question)
+                          or is_holding_offer_prompt(question)
+                          or is_sponsorship_prompt(question)):
                         selected_option = next(
                             (o for o in options if re.search(r'\bno\b', normalize_text(o["label"]))), None
                         )
