@@ -9,7 +9,7 @@ if os.path.exists(_venv_python) and os.path.abspath(sys.executable) != os.path.a
 from jab.modules.naukri import NaukriBot
 
 EMAIL    = "niteshsingh5375@gmail.com"
-PASSWORD = "nitesh5375"
+PASSWORD = ""
 SEARCH   = "java"
 JOB_AGE  = "1"
 MAX_PAGES = 10
